@@ -579,17 +579,18 @@ const GRID=96;
 
 function drawStarsAndMoon(){
   if(!pet._isNight) return;
+  // The stat bar covers roughly the top ~28px of the canvas, so keep
+  // stars and moon below that line to avoid being hidden behind it.
   ctx.fillStyle='rgba(255,255,255,0.55)';
-  const stars=[[14,16],[28,10],[44,18],[62,12],[78,20],[20,28],[70,30],[84,14]];
+  const stars=[[14,40],[30,34],[48,44],[64,36],[82,46],[22,52],[72,54],[40,60]];
   const tw=Math.sin(animFrame*0.3);
   stars.forEach((s,i)=>{ if((i+Math.floor(animFrame*0.2))%4!==0||tw>-0.5){ ctx.fillRect(s[0],s[1],1.5,1.5); } });
-  // crescent moon top-right
-  ctx.fillStyle='rgba(245,240,210,0.7)';
-  ctx.beginPath(); ctx.arc(80,16,7,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle=pet._isNight?'#3a4565':'#3a4565';
-  // approximate using bg color overlay
-  const bgc='#3a4565';
-  ctx.fillStyle=bgc; ctx.beginPath(); ctx.arc(77,14,7,0,Math.PI*2); ctx.fill();
+  // crescent moon, upper-right but below the bar
+  ctx.fillStyle='rgba(245,240,210,0.75)';
+  ctx.beginPath(); ctx.arc(80,40,7,0,Math.PI*2); ctx.fill();
+  // carve the crescent using the night bg colour
+  ctx.fillStyle='#3a4565';
+  ctx.beginPath(); ctx.arc(77,38,7,0,Math.PI*2); ctx.fill();
 }
 
 function drawPet(){
