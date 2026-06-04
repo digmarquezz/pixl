@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#000000" rx="112"/>
+  <rect x="27" y="27" width="458" height="458" rx="90" fill="none" stroke="#1f1f1f" stroke-width="2.5"/>
+
+  <!-- Corner brackets -->
+  <g stroke="#3a3a3a" stroke-width="4" fill="none" stroke-linecap="square">
+    <path d="M53 75 L53 53 L75 53"/>
+    <path d="M459 53 L437 53"/><path d="M459 75 L459 53"/>
+    <path d="M53 437 L53 459 L75 459"/>
+    <path d="M459 459 L437 459"/><path d="M459 437 L459 459"/>
+  </g>
+
+  <!-- LCD screen rounded rect -->
+  <rect x="116" y="136" width="280" height="240" rx="20" fill="#c5d2c0" stroke="#fff" stroke-width="6"/>
+
+  <!-- Pixelated creature (blob/cat hybrid) drawn as squares -->
+  <g fill="#2a352a">
+    <!-- ears -->
+    <rect x="196" y="180" width="20" height="20"/>
+    <rect x="296" y="180" width="20" height="20"/>
+    <rect x="216" y="180" width="20" height="20"/>
+    <rect x="276" y="180" width="20" height="20"/>
+    <!-- head/body top -->
+    <rect x="196" y="200" width="120" height="20"/>
+    <rect x="176" y="220" width="160" height="20"/>
+    <rect x="176" y="240" width="160" height="20"/>
+    <!-- eyes (gaps) -->
+    <rect x="176" y="260" width="160" height="20"/>
+    <rect x="176" y="280" width="160" height="20"/>
+    <!-- body bottom -->
+    <rect x="196" y="300" width="120" height="20"/>
+    <!-- feet -->
+    <rect x="196" y="320" width="20" height="20"/>
+    <rect x="296" y="320" width="20" height="20"/>
+  </g>
+  <!-- eyes as LCD background color (cut out) -->
+  <g fill="#c5d2c0">
+    <rect x="216" y="240" width="20" height="20"/>
+    <rect x="276" y="240" width="20" height="20"/>
+  </g>
+  <!-- mouth -->
+  <rect x="246" y="280" width="20" height="12" fill="#c5d2c0"/>
+
+  <!-- Yellow accent dot -->
+  <circle cx="427" cy="107" r="7" fill="#FFD700"/>
+
+  <!-- bottom tick marks -->
+  <g stroke="#444" stroke-width="3" stroke-linecap="square">
+    <line x1="216" y1="410" x2="216" y2="421"/>
+    <line x1="243" y1="410" x2="243" y2="421"/>
+    <line x1="256" y1="410" x2="256" y2="421"/>
+    <line x1="269" y1="410" x2="269" y2="421"/>
+    <line x1="296" y1="410" x2="296" y2="421"/>
+  </g>
+</svg>

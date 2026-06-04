@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="PIXL"/>
+<meta name="theme-color" content="#000000"/>
+<link rel="manifest" href="./manifest.json"/>
+<title>PIXL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --black:#000; --white:#fff;
+    --g1:#f7f7f7; --g2:#e8e8e8; --g3:#bbb; --g4:#777;
+    --blue:#0055ff;
+    --lcd-bg:#c5d2c0;      /* classic greenish LCD */
+    --lcd-bg2:#b8c6b2;
+    --lcd-dark:#2a352a;    /* dark pixels */
+    --lcd-off:#aebaa8;     /* off pixel subtle */
+    --danger:#c0392b;
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  html,body{width:100%;height:100%;background:#000;overscroll-behavior:none;touch-action:manipulation;}
+  body{
+    font-family:'Space Mono',monospace;
+    background:#fafafa;color:#000;
+    min-height:100dvh;display:flex;flex-direction:column;
+    align-items:center;justify-content:flex-start;
+    -webkit-font-smoothing:antialiased;
+    padding-top:calc(var(--safe-top) + 20px);
+    padding-bottom:calc(var(--safe-bottom) + 20px);
+    padding-left:16px;padding-right:16px;
+  }
+
+  /* HEADER */
+  .hdr{
+    width:100%;max-width:420px;
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:14px;padding:0 4px;
+  }
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:8px;}
+  .logo b{color:var(--blue);}
+  .menu-btn{
+    font-size:8px;font-weight:700;letter-spacing:0.12em;
+    color:var(--g4);padding:7px 12px;
+    border:1px solid var(--g2);border-radius:2px;
+    cursor:pointer;background:#fff;
+  }
+  .menu-btn:active{transform:scale(0.96);}
+
+  /* DEVICE */
+  .device{
+    width:100%;max-width:420px;
+    background:#fff;
+    border:1px solid var(--g2);
+    border-radius:28px;
+    padding:22px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  /* TOP BAR inside device */
+  .device-top{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:14px;padding:0 4px;
+  }
+  .pet-name{
+    font-size:10px;font-weight:700;letter-spacing:0.18em;
+  }
+  .pet-age{
+    font-family:'Space Mono',monospace;
+    font-size:8px;letter-spacing:0.1em;color:var(--g4);
+  }
+
+  /* LCD SCREEN */
+  .lcd{
+    position:relative;
+    width:100%;aspect-ratio:1/0.92;
+    background:var(--lcd-bg);
+    border-radius:12px;
+    border:3px solid #1a1a1a;
+    overflow:hidden;
+    box-shadow:inset 0 2px 12px rgba(0,0,0,0.25);
+  }
+  /* subtle scanline texture */
+  .lcd::after{
+    content:'';position:absolute;inset:0;
+    background:repeating-linear-gradient(
+      0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 3px
+    );
+    pointer-events:none;
+  }
+
+  .lcd-canvas{
+    position:absolute;inset:0;
+    width:100%;height:100%;
+    display:block;
+    image-rendering:pixelated;
+    image-rendering:-moz-crisp-edges;
+    image-rendering:crisp-edges;
+  }
+
+  /* STAT BARS top of LCD */
+  .lcd-stats{
+    position:absolute;top:8px;left:8px;right:8px;
+    display:flex;gap:6px;z-index:3;
+  }
+  .stat{flex:1;}
+  .stat-lbl{
+    font-family:'Space Mono',monospace;
+    font-size:6px;font-weight:700;letter-spacing:0.08em;
+    color:var(--lcd-dark);margin-bottom:2px;
+    display:flex;align-items:center;gap:2px;opacity:0.85;
+  }
+  .stat-track{
+    height:5px;background:var(--lcd-off);
+    border:1px solid var(--lcd-dark);
+    border-radius:1px;overflow:hidden;
+    position:relative;
+  }
+  .stat-fill{
+    height:100%;background:var(--lcd-dark);
+    transition:width 0.4s ease;
+    image-rendering:pixelated;
+  }
+  /* pixelated bar via steps */
+  .stat-fill.low{background:var(--lcd-dark);animation:blinkStat 0.8s steps(2) infinite;}
+  @keyframes blinkStat{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+  /* status icons row (sick, sleeping, etc) */
+  .lcd-status{
+    position:absolute;bottom:8px;left:0;right:0;
+    display:flex;justify-content:center;gap:10px;z-index:3;
+  }
+  .status-ico{
+    font-size:14px;
+    filter:grayscale(1) brightness(0.3);
+    animation:floatY 1.5s ease-in-out infinite;
+  }
+  @keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+
+  /* poop */
+  .lcd-poop{
+    position:absolute;font-size:16px;z-index:2;
+    filter:grayscale(1) brightness(0.25);
+  }
+
+  /* message overlay */
+  .lcd-msg{
+    position:absolute;left:0;right:0;bottom:0;
+    background:var(--lcd-dark);color:var(--lcd-bg);
+    font-family:'Space Mono',monospace;
+    font-size:9px;font-weight:700;letter-spacing:0.08em;
+    text-align:center;padding:7px;
+    transform:translateY(100%);
+    transition:transform 0.3s ease;z-index:5;
+  }
+  .lcd-msg.show{transform:translateY(0);}
+
+  /* evolution flash */
+  .evo-flash{
+    position:absolute;inset:0;background:#fff;
+    opacity:0;pointer-events:none;z-index:6;
+  }
+  .evo-flash.go{animation:evoFlash 1.6s ease;}
+  @keyframes evoFlash{
+    0%{opacity:0;}
+    15%{opacity:1;}
+    30%{opacity:0.2;}
+    45%{opacity:0.9;}
+    60%{opacity:0.1;}
+    75%{opacity:0.7;}
+    100%{opacity:0;}
+  }
+
+  /* death overlay */
+  .lcd-death{
+    position:absolute;inset:0;z-index:7;
+    background:rgba(40,53,42,0.92);
+    display:none;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;
+    color:var(--lcd-bg);
+  }
+  .lcd-death.show{display:flex;}
+  .death-ico{font-size:48px;filter:grayscale(1);animation:floatY 2s ease-in-out infinite;}
+  .death-txt{font-size:11px;font-weight:700;letter-spacing:0.16em;}
+  .death-sub{font-size:8px;letter-spacing:0.1em;opacity:0.7;text-align:center;line-height:1.6;padding:0 20px;}
+
+  /* CONTROLS */
+  .controls{
+    display:flex;justify-content:center;gap:18px;
+    margin-top:22px;
+  }
+  .btn{
+    width:64px;height:64px;
+    border-radius:50%;
+    border:2px solid #000;background:#fff;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:2px;
+    cursor:pointer;
+    transition:transform 0.1s, background 0.1s;
+    position:relative;
+  }
+  .btn:active{transform:scale(0.92);background:#000;}
+  .btn:active .btn-ico,.btn:active .btn-lbl{color:#fff;filter:invert(1);}
+  .btn-ico{font-size:20px;line-height:1;color:#000;}
+  .btn-lbl{
+    font-family:'Space Mono',monospace;
+    font-size:6px;font-weight:700;letter-spacing:0.1em;
+    color:var(--g4);
+  }
+  .btn.pressed{background:#000;}
+  .btn.pressed .btn-ico{filter:invert(1);}
+  .btn.pressed .btn-lbl{color:#fff;}
+
+  /* action menu (selectable icons) */
+  .action-bar{
+    display:flex;justify-content:space-between;gap:4px;
+    margin-top:18px;width:100%;
+  }
+  .action{
+    flex:1;
+    border:1px solid var(--g2);border-radius:8px;
+    padding:10px 4px;text-align:center;
+    background:#fff;transition:all 0.15s;
+    position:relative;
+  }
+  .action.sel{
+    border-color:#000;background:#000;
+  }
+  .action.sel .action-ico{filter:invert(1);}
+  .action.sel .action-lbl{color:#fff;}
+  .action-ico{font-size:18px;line-height:1;margin-bottom:4px;
+    filter:grayscale(1) brightness(0);}
+  .action-lbl{
+    font-family:'Space Mono',monospace;
+    font-size:6px;font-weight:700;letter-spacing:0.06em;
+    color:var(--g4);
+  }
+
+  /* INFO panel */
+  .info{
+    width:100%;max-width:420px;margin-top:16px;
+    display:none;
+  }
+  .info.show{display:block;}
+  .info-card{
+    background:#fff;border:1px solid var(--g2);
+    border-radius:14px;padding:16px;margin-bottom:10px;
+  }
+  .info-label{
+    font-size:8px;font-weight:700;letter-spacing:0.2em;
+    color:var(--g4);margin-bottom:12px;
+    display:flex;align-items:center;gap:8px;text-transform:uppercase;
+  }
+  .info-label::after{content:'';flex:1;height:1px;background:var(--g2);}
+  .info-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 0;border-bottom:1px solid var(--g1);
+    font-size:11px;
+  }
+  .info-row:last-child{border-bottom:none;}
+  .info-row .k{color:var(--g4);letter-spacing:0.04em;}
+  .info-row .v{font-weight:700;}
+
+  .evo-chain{
+    display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+    justify-content:center;padding:8px 0;
+  }
+  .evo-node{
+    width:36px;height:36px;
+    border:1px solid var(--g2);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;
+    filter:grayscale(1);
+  }
+  .evo-node.done{border-color:#000;background:var(--g1);}
+  .evo-node.current{border-color:var(--blue);border-width:2px;box-shadow:0 0 0 3px rgba(0,85,255,0.12);}
+  .evo-node.locked{opacity:0.3;}
+  .evo-arr{color:var(--g3);font-size:10px;}
+
+  .reset-btn{
+    width:100%;padding:13px;
+    background:#fff;color:var(--danger);
+    border:1px solid var(--danger);border-radius:8px;
+    font-family:'Space Mono',monospace;
+    font-size:9px;font-weight:700;letter-spacing:0.14em;
+    cursor:pointer;
+  }
+  .reset-btn:active{background:var(--danger);color:#fff;}
+
+  .footer{
+    margin-top:18px;text-align:center;
+    font-family:'Space Mono',monospace;
+    font-size:7px;letter-spacing:0.12em;color:var(--g3);line-height:2;
+  }
+
+  /* feeding/playing animation particles */
+  .particle{
+    position:absolute;z-index:4;
+    font-size:14px;pointer-events:none;
+    filter:grayscale(1) brightness(0.3);
+  }
+  @keyframes floatUp{
+    0%{transform:translateY(0) scale(0.5);opacity:0;}
+    20%{opacity:1;transform:translateY(-6px) scale(1);}
+    100%{transform:translateY(-40px) scale(0.8);opacity:0;}
+  }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">PI<b>X</b>L</div>
+  <div class="menu-btn" id="menu-btn">INFO</div>
+</div>
+
+<div class="device">
+  <div class="device-top">
+    <div class="pet-name" id="pet-name">—</div>
+    <div class="pet-age" id="pet-age">—</div>
+  </div>
+
+  <div class="lcd">
+    <div class="lcd-stats">
+      <div class="stat">
+        <div class="stat-lbl">HAMBRE</div>
+        <div class="stat-track"><div class="stat-fill" id="bar-hunger" style="width:100%"></div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">ENERGÍA</div>
+        <div class="stat-track"><div class="stat-fill" id="bar-energy" style="width:100%"></div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">FELIZ</div>
+        <div class="stat-track"><div class="stat-fill" id="bar-happy" style="width:100%"></div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">HIGIENE</div>
+        <div class="stat-track"><div class="stat-fill" id="bar-hygiene" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <canvas class="lcd-canvas" id="pet-canvas" width="64" height="64"></canvas>
+
+    <div class="lcd-status" id="lcd-status"></div>
+
+    <div class="evo-flash" id="evo-flash"></div>
+    <div class="lcd-msg" id="lcd-msg"></div>
+
+    <div class="lcd-death" id="lcd-death">
+      <div class="death-ico">✝</div>
+      <div class="death-txt" id="death-txt">SE HA IDO</div>
+      <div class="death-sub" id="death-sub">No sobrevivió. Cuídalo mejor la próxima vez.</div>
+      <button class="reset-btn" style="width:auto;padding:10px 20px;color:var(--lcd-bg);border-color:var(--lcd-bg);" onclick="resetPet()">EMPEZAR DE NUEVO</button>
+    </div>
+  </div>
+
+  <!-- ACTION SELECTOR -->
+  <div class="action-bar" id="action-bar">
+    <div class="action sel" data-action="feed">
+      <div class="action-ico">🍖</div>
+      <div class="action-lbl">COMER</div>
+    </div>
+    <div class="action" data-action="sleep">
+      <div class="action-ico">💤</div>
+      <div class="action-lbl">DORMIR</div>
+    </div>
+    <div class="action" data-action="play">
+      <div class="action-ico">🎮</div>
+      <div class="action-lbl">JUGAR</div>
+    </div>
+    <div class="action" data-action="clean">
+      <div class="action-ico">🧼</div>
+      <div class="action-lbl">LIMPIAR</div>
+    </div>
+    <div class="action" data-action="heal">
+      <div class="action-ico">💊</div>
+      <div class="action-lbl">CURAR</div>
+    </div>
+  </div>
+
+  <!-- 3 BUTTONS -->
+  <div class="controls">
+    <div class="btn" id="btn-a">
+      <div class="btn-ico">◀</div>
+      <div class="btn-lbl">A · MOVER</div>
+    </div>
+    <div class="btn" id="btn-b">
+      <div class="btn-ico">●</div>
+      <div class="btn-lbl">B · ACCIÓN</div>
+    </div>
+    <div class="btn" id="btn-c">
+      <div class="btn-ico">▶</div>
+      <div class="btn-lbl">C · MOVER</div>
+    </div>
+  </div>
+</div>
+
+<!-- INFO PANEL -->
+<div class="info" id="info-panel">
+  <div class="info-card">
+    <div class="info-label">ESTADO</div>
+    <div class="info-row"><span class="k">Nombre</span><span class="v" id="i-name">—</span></div>
+    <div class="info-row"><span class="k">Etapa</span><span class="v" id="i-stage">—</span></div>
+    <div class="info-row"><span class="k">Edad</span><span class="v" id="i-age">—</span></div>
+    <div class="info-row"><span class="k">Cuidado</span><span class="v" id="i-care">—</span></div>
+    <div class="info-row"><span class="k">Estado</span><span class="v" id="i-health">—</span></div>
+  </div>
+
+  <div class="info-card">
+    <div class="info-label">EVOLUCIÓN</div>
+    <div class="evo-chain" id="evo-chain"></div>
+    <div style="font-size:8px;color:var(--g4);text-align:center;margin-top:8px;letter-spacing:0.06em;line-height:1.6;" id="evo-hint">
+      Tu mascota evoluciona cada día. Cómo la cuides decide en qué se convierte.
+    </div>
+  </div>
+
+  <div class="info-card">
+    <div class="info-label">CÓMO JUGAR</div>
+    <div style="font-size:10px;line-height:1.8;color:var(--g4);letter-spacing:0.02em;">
+      Usa <b style="color:#000;">A</b> y <b style="color:#000;">C</b> para moverte entre acciones, y <b style="color:#000;">B</b> para ejecutarlas. Mantén las cuatro barras altas. Si una llega a cero, tu mascota enferma. Si sigue enferma <b style="color:#000;">12 horas</b>, morirá. El tiempo corre aunque cierres la app.
+    </div>
+  </div>
+
+  <button class="reset-btn" onclick="confirmReset()">⟲ REINICIAR MASCOTA</button>
+
+  <div class="footer">
+    PIXL · MASCOTA VIRTUAL · DIGMARQUEZZ.ONLINE<br/>
+    <span id="yr"></span> · EL ESTADO SE GUARDA EN TU DISPOSITIVO
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// ─── CONFIG ─────────────────────────────────────────
+const SAVE_KEY = 'pixl-pet-v1';
+const STAGE_HOURS = [0, 12, 48, 96, 168]; // egg, baby, child, teen, adult (hours)
+const DEATH_HOURS = 12;       // hours sick before death
+const DECAY = {               // points lost per hour
+  hunger: 100/14,   // empty in ~14h
+  energy: 100/16,
+  happy: 100/18,
+  hygiene: 100/20,
+};
+
+// Evolution branches (decided at "teen" stage based on care score)
+const EVOLUTIONS = {
+  egg:   {name:'HUEVO',  emoji:'🥚', stage:0},
+  baby:  {name:'BLOB',   emoji:'🫧', stage:1},
+  child: {name:'POLLO',  emoji:'🐤', stage:2},
+  // teen branches
+  teen_good: {name:'CRÍA NOBLE', emoji:'🦊', stage:3, branch:'good'},
+  teen_mid:  {name:'CRÍA',       emoji:'🐱', stage:3, branch:'mid'},
+  teen_bad:  {name:'CRÍA RUDA',  emoji:'🐀', stage:3, branch:'bad'},
+  // adult branches
+  adult_good: {name:'ZORRO',  emoji:'🦊', stage:4, branch:'good'},
+  adult_mid:  {name:'GATO',   emoji:'🐱', stage:4, branch:'mid'},
+  adult_bad:  {name:'RATA',   emoji:'🐀', stage:4, branch:'bad'},
+};
+
+const STAGE_NAMES = ['Huevo','Bebé','Cría','Joven','Adulto'];
+
+// ─── STATE ──────────────────────────────────────────
+let pet = null;
+let selectedAction = 0;
+const ACTIONS = ['feed','sleep','play','clean','heal'];
+
+function defaultPet(){
+  const now = Date.now();
+  return {
+    born: now,
+    lastTick: now,
+    hunger: 100, energy: 100, happy: 100, hygiene: 100,
+    careSum: 0, careCount: 0,   // for branch calculation
+    branch: null,               // 'good' | 'mid' | 'bad'
+    stageKey: 'egg',
+    sick: false,
+    sickSince: null,
+    dead: false,
+    poop: 0,
+    sleeping: false,
+  };
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(raw){ pet = JSON.parse(raw); return; }
+  }catch(_){}
+  pet = defaultPet();
+  save();
+}
+function save(){ localStorage.setItem(SAVE_KEY, JSON.stringify(pet)); }
+
+function resetPet(){
+  pet = defaultPet();
+  save();
+  $('lcd-death').classList.remove('show');
+  render();
+  showMsg('¡NUEVO COMIENZO!');
+}
+function confirmReset(){
+  if(confirm('¿Seguro que quieres reiniciar tu mascota? Se perderá su progreso.')) resetPet();
+}
+
+// ─── TIME SIMULATION ────────────────────────────────
+function simulate(){
+  if(pet.dead) return;
+  const now = Date.now();
+  const hoursPassed = (now - pet.lastTick) / 3600000;
+  if(hoursPassed <= 0){ pet.lastTick = now; return; }
+
+  // Egg stage: no decay
+  const ageH = (now - pet.born) / 3600000;
+  if(ageH >= STAGE_HOURS[1]){
+    // decay only when not sleeping (energy recovers if sleeping)
+    pet.hunger  = clamp(pet.hunger  - DECAY.hunger  * hoursPassed);
+    pet.happy   = clamp(pet.happy   - DECAY.happy   * hoursPassed);
+    pet.hygiene = clamp(pet.hygiene - DECAY.hygiene * hoursPassed);
+    if(pet.sleeping){
+      pet.energy = clamp(pet.energy + 20 * hoursPassed);
+      if(pet.energy >= 100) pet.sleeping = false;
+    } else {
+      pet.energy = clamp(pet.energy - DECAY.energy * hoursPassed);
+    }
+    // poop accumulation
+    if(Math.random() < hoursPassed * 0.4) pet.poop = Math.min(3, pet.poop + 1);
+    if(pet.poop > 0) pet.hygiene = clamp(pet.hygiene - pet.poop * 2 * hoursPassed);
+
+    // track care quality (avg of stats)
+    const avg = (pet.hunger + pet.energy + pet.happy + pet.hygiene) / 4;
+    pet.careSum += avg * hoursPassed;
+    pet.careCount += hoursPassed;
+  }
+
+  // sickness check
+  const anyZero = pet.hunger <= 0 || pet.energy <= 0 || pet.happy <= 0 || pet.hygiene <= 0;
+  if(anyZero && !pet.sick){
+    pet.sick = true;
+    pet.sickSince = now;
+  } else if(!anyZero && pet.sick){
+    pet.sick = false;
+    pet.sickSince = null;
+  }
+
+  // death check
+  if(pet.sick && pet.sickSince){
+    const sickH = (now - pet.sickSince) / 3600000;
+    if(sickH >= DEATH_HOURS){
+      pet.dead = true;
+    }
+  }
+
+  // evolution check
+  updateStage(ageH);
+
+  pet.lastTick = now;
+  save();
+}
+
+function clamp(v){ return Math.max(0, Math.min(100, v)); }
+
+function careScore(){
+  if(pet.careCount <= 0) return 100;
+  return pet.careSum / pet.careCount;
+}
+
+function updateStage(ageH){
+  let newStageKey = pet.stageKey;
+
+  if(ageH < STAGE_HOURS[1]) newStageKey = 'egg';
+  else if(ageH < STAGE_HOURS[2]) newStageKey = 'baby';
+  else if(ageH < STAGE_HOURS[3]) newStageKey = 'child';
+  else if(ageH < STAGE_HOURS[4]){
+    // teen — decide branch
+    if(!pet.branch) pet.branch = decideBranch();
+    newStageKey = 'teen_' + pet.branch;
+  } else {
+    if(!pet.branch) pet.branch = decideBranch();
+    newStageKey = 'adult_' + pet.branch;
+  }
+
+  if(newStageKey !== pet.stageKey){
+    const oldStage = EVOLUTIONS[pet.stageKey]?.stage ?? -1;
+    const newStage = EVOLUTIONS[newStageKey]?.stage ?? 0;
+    pet.stageKey = newStageKey;
+    if(newStage > oldStage && oldStage >= 0){
+      triggerEvolution();
+    }
+  }
+}
+
+function decideBranch(){
+  const score = careScore();
+  if(score >= 75) return 'good';
+  if(score >= 45) return 'mid';
+  return 'bad';
+}
+
+let pendingEvo = false;
+function triggerEvolution(){
+  pendingEvo = true;
+}
+
+// ─── PIXEL PET RENDERING ────────────────────────────
+const canvas = $('pet-canvas');
+const ctx = canvas.getContext('2d');
+const GRID = 64;
+const PX = 1; // canvas is 64x64, scaled by CSS
+
+// Pixel art sprites (16x16 grids, scaled to fit). 1 = dark pixel.
+// Each pet has 2 frames for idle animation.
+const SPRITES = {
+  egg: [
+    [
+      "0000011111100000",
+      "0000111111110000",
+      "0001111111111000",
+      "0011111111111100",
+      "0011111111111100",
+      "0111111111111110",
+      "0111111111111110",
+      "0111111011111110",
+      "0111110001111110",
+      "0111111011111110",
+      "0111111111111110",
+      "0011111111111100",
+      "0011111111111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0000011111100000",
+    ],
+    [
+      "0000011111100000",
+      "0000111111110000",
+      "0001111111111000",
+      "0011111111111100",
+      "0011111111111100",
+      "0111111111111110",
+      "0111101111011110",
+      "0111111111111110",
+      "0111111111111110",
+      "0111110111111110",
+      "0111111111111110",
+      "0011111111111100",
+      "0011111111111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0000011111100000",
+    ],
+  ],
+  baby: [
+    [
+      "0000000000000000",
+      "0000001111000000",
+      "0000011111100000",
+      "0000111111110000",
+      "0001111111111000",
+      "0011111111111100",
+      "0011011111101100",
+      "0011011111101100",
+      "0011111111111100",
+      "0011111111111100",
+      "0011110000111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0000011111100000",
+      "0000000000000000",
+      "0000000000000000",
+    ],
+    [
+      "0000000000000000",
+      "0000001111000000",
+      "0000011111100000",
+      "0000111111110000",
+      "0001111111111000",
+      "0011111111111100",
+      "0011111111111100",
+      "0011011111101100",
+      "0011011111101100",
+      "0011111111111100",
+      "0011110000111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0000011111100000",
+      "0000000000000000",
+      "0000000000000000",
+    ],
+  ],
+  child: [
+    [
+      "0000001111000000",
+      "0000011111100000",
+      "0000110110110000",
+      "0000111111110000",
+      "0001111111111000",
+      "0011111111111100",
+      "0011011111101100",
+      "0011011111101100",
+      "0011111111111100",
+      "0011111001111100",
+      "0011111111111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0000110000110000",
+      "0000110000110000",
+      "0000000000000000",
+    ],
+    [
+      "0000001111000000",
+      "0000011111100000",
+      "0000110110110000",
+      "0000111111110000",
+      "0001111111111000",
+      "0011111111111100",
+      "0011011111101100",
+      "0011011111101100",
+      "0011111111111100",
+      "0011111001111100",
+      "0011111111111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0001100000011000",
+      "0001100000011000",
+      "0000000000000000",
+    ],
+  ],
+  // GOOD branch — fox-like (pointed ears, tail)
+  teen_good: [
+    [
+      "0110000000001100",
+      "0111000000011100",
+      "0011100000111000",
+      "0001111111110000",
+      "0011111111111000",
+      "0111011111101100",
+      "0111011111101110",
+      "0111111111111110",
+      "0111110000111110",
+      "0011111111111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0000110000110000",
+      "0001100000011000",
+      "0011000000001100",
+      "0000000000000000",
+    ],
+    [
+      "0110000000001100",
+      "0111000000011100",
+      "0011100000111000",
+      "0001111111110000",
+      "0011111111111000",
+      "0111011111101100",
+      "0111011111101110",
+      "0111111111111110",
+      "0111110000111110",
+      "0011111111111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0000110000110000",
+      "0001100000011000",
+      "0000110000110000",
+      "0000000000000000",
+    ],
+  ],
+  // MID branch — cat-like
+  teen_mid: [
+    [
+      "0100000000000010",
+      "0110000000000110",
+      "0111000000001110",
+      "0011111111111000",
+      "0011111111111100",
+      "0111011111101100",
+      "0111011111101110",
+      "0111111111111110",
+      "0111111001111110",
+      "0111110110111110",
+      "0011111111111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0001100110011000",
+      "0011000110001100",
+      "0000000000000000",
+    ],
+    [
+      "0100000000000010",
+      "0110000000000110",
+      "0111000000001110",
+      "0011111111111000",
+      "0011111111111100",
+      "0111011111101100",
+      "0111011111101110",
+      "0111111111111110",
+      "0111111001111110",
+      "0111110110111110",
+      "0011111111111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0001100110011000",
+      "0001100110011000",
+      "0000000000000000",
+    ],
+  ],
+  // BAD branch — rat-like (round ears, thin tail)
+  teen_bad: [
+    [
+      "0011000000110000",
+      "0111100001111000",
+      "0111100001111000",
+      "0011111111110000",
+      "0011111111111000",
+      "0111011111101100",
+      "0111011111101100",
+      "0111111111111100",
+      "0111111111111100",
+      "0011111001111110",
+      "0011111111111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0000110000110000",
+      "0000110000111110",
+      "0000000000001110",
+    ],
+    [
+      "0011000000110000",
+      "0111100001111000",
+      "0111100001111000",
+      "0011111111110000",
+      "0011111111111000",
+      "0111011111101100",
+      "0111011111101100",
+      "0111111111111100",
+      "0111111111111100",
+      "0011111001111110",
+      "0011111111111100",
+      "0001111111111000",
+      "0000111111110000",
+      "0000110000110000",
+      "0001110000110000",
+      "0111000000000000",
+    ],
+  ],
+};
+// adults reuse teen sprites but bigger; map adult->teen sprite
+SPRITES.adult_good = SPRITES.teen_good;
+SPRITES.adult_mid = SPRITES.teen_mid;
+SPRITES.adult_bad = SPRITES.teen_bad;
+
+let animFrame = 0;
+let bobOffset = 0;
+
+function drawPet(){
+  ctx.clearRect(0,0,GRID,GRID);
+  if(pet.dead){
+    drawDeadPet();
+    return;
+  }
+
+  const sprite = SPRITES[pet.stageKey] || SPRITES.egg;
+  const frame = sprite[animFrame % sprite.length];
+  const stage = EVOLUTIONS[pet.stageKey]?.stage ?? 0;
+
+  // scale: bigger as it grows
+  const cell = stage >= 4 ? 3.4 : stage >= 3 ? 3.2 : stage >= 2 ? 3.0 : stage >= 1 ? 2.8 : 3.0;
+  const spriteW = 16 * cell;
+  const offX = (GRID - spriteW) / 2;
+  const offY = (GRID - spriteW) / 2 + bobOffset + 3;
+
+  ctx.fillStyle = '#2a352a';
+
+  // sleeping: draw lying down (skip if egg)
+  const sleeping = pet.sleeping && stage >= 1;
+
+  for(let y = 0; y < 16; y++){
+    for(let x = 0; x < 16; x++){
+      if(frame[y][x] === '1'){
+        let dx = offX + x * cell;
+        let dy = offY + y * cell;
+        ctx.fillRect(Math.floor(dx), Math.floor(dy), Math.ceil(cell), Math.ceil(cell));
+      }
+    }
+  }
+
+  // sick indicator: skull bubble
+  if(pet.sick){
+    ctx.font = '12px monospace';
+    ctx.fillText('💀', offX + spriteW - 6, offY + 2);
+  }
+
+  // sleeping Z's
+  if(sleeping){
+    ctx.fillStyle = '#2a352a';
+    ctx.font = 'bold 8px monospace';
+    ctx.fillText('z', offX + spriteW - 2, offY + 6);
+    ctx.font = 'bold 6px monospace';
+    ctx.fillText('z', offX + spriteW + 3, offY + 1);
+  }
+}
+
+function drawDeadPet(){
+  ctx.fillStyle = '#2a352a';
+  ctx.font = '28px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('✝', GRID/2, GRID/2 + 10);
+  ctx.textAlign = 'left';
+}
+
+// idle animation loop
+setInterval(() => {
+  if(pet && !pet.dead){
+    animFrame++;
+    bobOffset = Math.sin(animFrame * 0.5) * 1.2;
+    drawPet();
+  }
+}, 500);
+
+// ─── ACTIONS ────────────────────────────────────────
+function doAction(action){
+  if(pet.dead) return;
+  const stage = EVOLUTIONS[pet.stageKey]?.stage ?? 0;
+  if(stage === 0){ showMsg('EL HUEVO AÚN NO ECLOSIONA...'); return; }
+
+  switch(action){
+    case 'feed':
+      if(pet.hunger >= 98){ showMsg('NO TIENE HAMBRE'); return; }
+      pet.hunger = clamp(pet.hunger + 35);
+      spawnParticle('🍖'); showMsg('ÑAM ÑAM...');
+      break;
+    case 'sleep':
+      if(pet.sleeping){ pet.sleeping = false; showMsg('¡DESPIERTA!'); }
+      else { pet.sleeping = true; showMsg('ZZZ... DURMIENDO'); }
+      break;
+    case 'play':
+      if(pet.energy < 15){ showMsg('DEMASIADO CANSADO'); return; }
+      pet.happy = clamp(pet.happy + 35);
+      pet.energy = clamp(pet.energy - 10);
+      spawnParticle('❤'); showMsg('¡QUÉ DIVERTIDO!');
+      break;
+    case 'clean':
+      if(pet.poop > 0){ pet.poop = 0; pet.hygiene = clamp(pet.hygiene + 40); spawnParticle('✨'); showMsg('¡TODO LIMPIO!'); }
+      else if(pet.hygiene >= 98){ showMsg('YA ESTÁ LIMPIO'); }
+      else { pet.hygiene = clamp(pet.hygiene + 40); spawnParticle('✨'); showMsg('¡RELUCIENTE!'); }
+      break;
+    case 'heal':
+      if(!pet.sick){ showMsg('NO ESTÁ ENFERMO'); return; }
+      // healing requires raising the zeroed stat
+      pet.hunger = Math.max(pet.hunger, 30);
+      pet.energy = Math.max(pet.energy, 30);
+      pet.happy = Math.max(pet.happy, 30);
+      pet.hygiene = Math.max(pet.hygiene, 30);
+      pet.sick = false; pet.sickSince = null;
+      spawnParticle('💊'); showMsg('¡RECUPERADO!');
+      break;
+  }
+  save();
+  render();
+}
+
+function spawnParticle(emoji){
+  const lcd = document.querySelector('.lcd');
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.textContent = emoji;
+  p.style.left = (42 + Math.random()*16) + '%';
+  p.style.top = '52%';
+  p.style.animation = 'floatUp 1s ease forwards';
+  lcd.appendChild(p);
+  setTimeout(() => p.remove(), 1000);
+}
+
+let msgTimeout;
+function showMsg(txt){
+  $('lcd-msg').textContent = txt;
+  $('lcd-msg').classList.add('show');
+  clearTimeout(msgTimeout);
+  msgTimeout = setTimeout(() => $('lcd-msg').classList.remove('show'), 2000);
+}
+
+// ─── RENDER ─────────────────────────────────────────
+function render(){
+  if(pendingEvo){
+    pendingEvo = false;
+    playEvolution();
+  }
+
+  const stage = EVOLUTIONS[pet.stageKey]?.stage ?? 0;
+  const info = EVOLUTIONS[pet.stageKey];
+
+  // name + age
+  $('pet-name').textContent = info?.name || '—';
+  const ageH = (Date.now() - pet.born) / 3600000;
+  const ageD = Math.floor(ageH / 24);
+  const ageHr = Math.floor(ageH % 24);
+  $('pet-age').textContent = ageD > 0 ? `${ageD}D ${ageHr}H` : `${ageHr}H`;
+
+  // bars
+  setBar('bar-hunger', pet.hunger);
+  setBar('bar-energy', pet.energy);
+  setBar('bar-happy', pet.happy);
+  setBar('bar-hygiene', pet.hygiene);
+
+  // status icons
+  const statusEl = $('lcd-status');
+  statusEl.innerHTML = '';
+  if(pet.dead){
+    $('lcd-death').classList.add('show');
+    const careLvl = careScore();
+    $('death-sub').textContent = 'No sobrevivió. Estuvo enfermo demasiado tiempo.';
+  } else {
+    $('lcd-death').classList.remove('show');
+    if(pet.sick) statusEl.innerHTML += '<span class="status-ico">🤒</span>';
+    if(pet.sleeping) statusEl.innerHTML += '<span class="status-ico">💤</span>';
+    if(pet.poop > 0){
+      for(let i=0;i<pet.poop;i++) statusEl.innerHTML += '<span class="status-ico">💩</span>';
+    }
+  }
+
+  drawPet();
+  renderInfo();
+}
+
+function setBar(id, val){
+  const el = $(id);
+  el.style.width = val + '%';
+  if(val <= 20) el.classList.add('low');
+  else el.classList.remove('low');
+}
+
+function renderInfo(){
+  const info = EVOLUTIONS[pet.stageKey];
+  const stage = info?.stage ?? 0;
+  $('i-name').textContent = info?.name || '—';
+  $('i-stage').textContent = STAGE_NAMES[stage] || '—';
+  const ageH = (Date.now() - pet.born) / 3600000;
+  const ageD = Math.floor(ageH / 24);
+  $('i-age').textContent = ageD > 0 ? `${ageD} días` : `${Math.floor(ageH)} horas`;
+  const score = careScore();
+  $('i-care').textContent = score >= 75 ? 'EXCELENTE' : score >= 45 ? 'NORMAL' : 'DESCUIDADO';
+  $('i-health').textContent = pet.dead ? '✝ MUERTO' : pet.sick ? '🤒 ENFERMO' : pet.sleeping ? '💤 DURMIENDO' : '✓ SANO';
+
+  // evolution chain
+  const chain = $('evo-chain');
+  const branch = pet.branch || 'mid';
+  const chainKeys = ['egg','baby','child','teen_'+branch,'adult_'+branch];
+  chain.innerHTML = '';
+  chainKeys.forEach((key, i) => {
+    const e = EVOLUTIONS[key];
+    const node = document.createElement('div');
+    let cls = 'evo-node';
+    if(key === pet.stageKey) cls += ' current';
+    else if(stage > (e?.stage ?? 0)) cls += ' done';
+    else if(stage < (e?.stage ?? 0)) cls += ' locked';
+    node.className = cls;
+    node.textContent = e?.emoji || '?';
+    chain.appendChild(node);
+    if(i < chainKeys.length - 1){
+      const arr = document.createElement('span');
+      arr.className = 'evo-arr';
+      arr.textContent = '→';
+      chain.appendChild(arr);
+    }
+  });
+
+  if(!pet.branch && stage < 3){
+    $('evo-hint').textContent = 'Tu mascota evoluciona cada día. Cómo la cuides decide en qué se convierte.';
+  } else if(pet.branch === 'good'){
+    $('evo-hint').textContent = 'La estás cuidando de maravilla. Va por el mejor camino.';
+  } else if(pet.branch === 'bad'){
+    $('evo-hint').textContent = 'La has descuidado bastante. Su evolución lo refleja.';
+  } else {
+    $('evo-hint').textContent = 'La cuidas razonablemente. Sigue así.';
+  }
+}
+
+function playEvolution(){
+  const flash = $('evo-flash');
+  flash.classList.remove('go');
+  void flash.offsetWidth; // reflow
+  flash.classList.add('go');
+  showMsg('¡EVOLUCIONANDO!');
+  // vibration if supported
+  if(navigator.vibrate) navigator.vibrate([100,50,100,50,200]);
+}
+
+// ─── CONTROLS ───────────────────────────────────────
+function selectAction(idx){
+  selectedAction = (idx + ACTIONS.length) % ACTIONS.length;
+  document.querySelectorAll('.action').forEach((el, i) => {
+    el.classList.toggle('sel', i === selectedAction);
+  });
+}
+
+function setupControls(){
+  $('btn-a').addEventListener('click', () => { selectAction(selectedAction - 1); flashBtn('btn-a'); });
+  $('btn-c').addEventListener('click', () => { selectAction(selectedAction + 1); flashBtn('btn-c'); });
+  $('btn-b').addEventListener('click', () => { doAction(ACTIONS[selectedAction]); flashBtn('btn-b'); });
+
+  // tap directly on action
+  document.querySelectorAll('.action').forEach((el, i) => {
+    el.addEventListener('click', () => {
+      selectAction(i);
+      doAction(ACTIONS[i]);
+    });
+  });
+
+  // info toggle
+  $('menu-btn').addEventListener('click', () => {
+    const panel = $('info-panel');
+    panel.classList.toggle('show');
+    $('menu-btn').textContent = panel.classList.contains('show') ? 'CERRAR' : 'INFO';
+    if(panel.classList.contains('show')) renderInfo();
+  });
+}
+
+function flashBtn(id){
+  const b = $(id);
+  b.classList.add('pressed');
+  setTimeout(() => b.classList.remove('pressed'), 120);
+}
+
+// ─── PREVENT ZOOM ───────────────────────────────────
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+document.addEventListener('gestureend', e => e.preventDefault());
+let lastTouch = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if(now - lastTouch <= 300) e.preventDefault();
+  lastTouch = now;
+}, {passive:false});
+
+// ─── INIT ───────────────────────────────────────────
+$('yr').textContent = new Date().getFullYear();
+load();
+simulate();
+selectAction(0);
+setupControls();
+render();
+
+// tick every 30s while open
+setInterval(() => { simulate(); render(); }, 30000);
+
+// re-simulate when app regains focus
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden){ simulate(); render(); }
+});
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
