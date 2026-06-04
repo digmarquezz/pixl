@@ -17,10 +17,7 @@
     --black:#000; --white:#fff;
     --g1:#f7f7f7; --g2:#e8e8e8; --g3:#bbb; --g4:#777;
     --blue:#0055ff;
-    --lcd-bg:#c5d2c0;      /* classic greenish LCD */
-    --lcd-bg2:#b8c6b2;
-    --lcd-dark:#2a352a;    /* dark pixels */
-    --lcd-off:#aebaa8;     /* off pixel subtle */
+    --lcd-dark:#2a352a;
     --danger:#c0392b;
     --safe-top:env(safe-area-inset-top,0px);
     --safe-bottom:env(safe-area-inset-bottom,0px);
@@ -38,6 +35,46 @@
     padding-bottom:calc(var(--safe-bottom) + 20px);
     padding-left:16px;padding-right:16px;
   }
+
+  /* ─── WELCOME / NAMING SCREEN ─── */
+  .welcome{
+    position:fixed;inset:0;z-index:1000;
+    background:#fafafa;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:32px;text-align:center;
+    transition:opacity 0.5s ease;
+  }
+  .welcome.hide{opacity:0;pointer-events:none;}
+  .welcome-logo{font-family:'Bebas Neue',sans-serif;font-size:56px;letter-spacing:14px;margin-bottom:6px;}
+  .welcome-logo b{color:var(--blue);}
+  .welcome-sub{font-size:9px;letter-spacing:0.2em;color:var(--g4);margin-bottom:40px;text-transform:uppercase;}
+  .welcome-egg{
+    width:120px;height:120px;margin-bottom:32px;
+    animation:eggWobble 2s ease-in-out infinite;
+  }
+  @keyframes eggWobble{
+    0%,100%{transform:rotate(-4deg);}
+    50%{transform:rotate(4deg);}
+  }
+  .welcome-q{font-size:11px;letter-spacing:0.1em;color:#000;margin-bottom:16px;font-weight:700;}
+  .name-input{
+    width:100%;max-width:240px;
+    padding:14px 16px;text-align:center;
+    border:2px solid #000;border-radius:10px;
+    font-family:'Space Mono',monospace;
+    font-size:18px;font-weight:700;letter-spacing:0.1em;
+    text-transform:uppercase;background:#fff;
+    outline:none;margin-bottom:8px;
+  }
+  .name-hint{font-size:8px;letter-spacing:0.12em;color:var(--g3);margin-bottom:28px;}
+  .welcome-btn{
+    padding:15px 40px;background:#000;color:#fff;border:none;border-radius:10px;
+    font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.16em;
+    cursor:pointer;transition:transform 0.15s;
+  }
+  .welcome-btn:active{transform:scale(0.96);}
+  .welcome-btn:disabled{background:var(--g3);cursor:not-allowed;}
 
   /* HEADER */
   .hdr{
@@ -64,265 +101,206 @@
     padding:26px 24px 24px;
     box-shadow:0 10px 36px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
   }
-
-  /* TOP BAR inside device */
   .device-top{
     display:flex;align-items:center;justify-content:space-between;
     margin-bottom:16px;padding:0 6px;
   }
-  .pet-name{
-    font-size:10px;font-weight:700;letter-spacing:0.18em;
-  }
-  .pet-age{
-    font-family:'Space Mono',monospace;
-    font-size:8px;letter-spacing:0.1em;color:var(--g4);
-  }
+  .pet-name{font-size:10px;font-weight:700;letter-spacing:0.18em;}
+  .pet-age{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:0.1em;color:var(--g4);}
 
   /* LCD SCREEN */
   .lcd{
     position:relative;
     width:100%;aspect-ratio:1/0.96;
-    background:radial-gradient(ellipse at 50% 40%, var(--lcd-bg) 0%, var(--lcd-bg2) 100%);
     border-radius:18px;
     border:4px solid #1a1a1a;
     overflow:hidden;
-    box-shadow:
-      inset 0 2px 14px rgba(0,0,0,0.28),
-      inset 0 0 0 2px rgba(255,255,255,0.08);
+    box-shadow:inset 0 2px 14px rgba(0,0,0,0.28), inset 0 0 0 2px rgba(255,255,255,0.08);
   }
-  /* subtle scanline texture */
+  /* dynamic background layer */
+  .lcd-bg{position:absolute;inset:0;transition:background 1.5s ease;z-index:0;}
+  /* scanlines */
   .lcd::after{
-    content:'';position:absolute;inset:0;
-    background:repeating-linear-gradient(
-      0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 3px
-    );
+    content:'';position:absolute;inset:0;z-index:4;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,0.035) 0px, rgba(0,0,0,0.035) 1px, transparent 1px, transparent 3px);
     pointer-events:none;
   }
 
   .lcd-canvas{
-    position:absolute;inset:0;
-    width:100%;height:100%;
-    display:block;
-    image-rendering:pixelated;
-    image-rendering:-moz-crisp-edges;
-    image-rendering:crisp-edges;
+    position:absolute;inset:0;width:100%;height:100%;display:block;z-index:2;
+    image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges;
   }
 
-  /* STAT BARS top of LCD */
-  .lcd-stats{
-    position:absolute;top:8px;left:8px;right:8px;
-    display:flex;gap:6px;z-index:3;
-  }
+  .lcd-stats{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:6px;z-index:3;}
   .stat{flex:1;}
-  .stat-lbl{
-    font-family:'Space Mono',monospace;
-    font-size:6px;font-weight:700;letter-spacing:0.08em;
-    color:var(--lcd-dark);margin-bottom:2px;
-    display:flex;align-items:center;gap:2px;opacity:0.85;
-  }
-  .stat-track{
-    height:5px;background:var(--lcd-off);
-    border:1px solid var(--lcd-dark);
-    border-radius:1px;overflow:hidden;
-    position:relative;
-  }
-  .stat-fill{
-    height:100%;background:var(--lcd-dark);
-    transition:width 0.4s ease;
-    image-rendering:pixelated;
-  }
-  /* pixelated bar via steps */
-  .stat-fill.low{background:var(--lcd-dark);animation:blinkStat 0.8s steps(2) infinite;}
+  .stat-lbl{font-family:'Space Mono',monospace;font-size:6px;font-weight:700;letter-spacing:0.08em;
+    color:var(--lcd-dark);margin-bottom:2px;opacity:0.9;}
+  .stat-track{height:5px;background:rgba(42,53,42,0.18);border:1px solid var(--lcd-dark);
+    border-radius:1px;overflow:hidden;}
+  .stat-fill{height:100%;background:var(--lcd-dark);transition:width 0.4s ease;}
+  .stat-fill.low{animation:blinkStat 0.8s steps(2) infinite;}
   @keyframes blinkStat{0%,100%{opacity:1;}50%{opacity:0.3;}}
 
-  /* status icons row (sick, sleeping, etc) */
-  .lcd-status{
-    position:absolute;bottom:8px;left:0;right:0;
-    display:flex;justify-content:center;gap:10px;z-index:3;
-  }
-  .status-ico{
-    font-size:14px;
-    filter:grayscale(1) brightness(0.3);
-    animation:floatY 1.5s ease-in-out infinite;
-  }
+  .lcd-status{position:absolute;bottom:8px;left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:3;}
+  .status-ico{font-size:14px;filter:grayscale(1) brightness(0.3);animation:floatY 1.5s ease-in-out infinite;}
   @keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
 
-  /* poop */
-  .lcd-poop{
-    position:absolute;font-size:16px;z-index:2;
-    filter:grayscale(1) brightness(0.25);
-  }
-
-  /* message overlay */
   .lcd-msg{
     position:absolute;left:0;right:0;bottom:0;
-    background:var(--lcd-dark);color:var(--lcd-bg);
-    font-family:'Space Mono',monospace;
-    font-size:9px;font-weight:700;letter-spacing:0.08em;
-    text-align:center;padding:7px;
-    transform:translateY(100%);
-    transition:transform 0.3s ease;z-index:5;
+    background:var(--lcd-dark);color:#d8e0d4;
+    font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.08em;
+    text-align:center;padding:7px;transform:translateY(100%);transition:transform 0.3s ease;z-index:5;
   }
   .lcd-msg.show{transform:translateY(0);}
 
-  /* evolution flash */
-  .evo-flash{
-    position:absolute;inset:0;background:#fff;
-    opacity:0;pointer-events:none;z-index:6;
-  }
+  .evo-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:6;}
   .evo-flash.go{animation:evoFlash 1.6s ease;}
-  @keyframes evoFlash{
-    0%{opacity:0;}
-    15%{opacity:1;}
-    30%{opacity:0.2;}
-    45%{opacity:0.9;}
-    60%{opacity:0.1;}
-    75%{opacity:0.7;}
-    100%{opacity:0;}
-  }
+  @keyframes evoFlash{0%{opacity:0;}15%{opacity:1;}30%{opacity:0.2;}45%{opacity:0.9;}60%{opacity:0.1;}75%{opacity:0.7;}100%{opacity:0;}}
 
-  /* death overlay */
-  .lcd-death{
-    position:absolute;inset:0;z-index:7;
-    background:rgba(40,53,42,0.92);
-    display:none;flex-direction:column;
-    align-items:center;justify-content:center;gap:14px;
-    color:var(--lcd-bg);
+  /* minigame UI */
+  .game-ui{
+    position:absolute;top:38%;left:0;right:0;z-index:5;
+    display:none;flex-direction:column;align-items:center;gap:6px;
+    transform:translateY(-50%);
   }
+  .game-ui.show{display:flex;}
+  .game-score{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.1em;
+    color:#d8e0d4;background:rgba(42,53,42,0.92);padding:4px 10px;border-radius:3px;}
+  .game-prompt{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;
+    color:#d8e0d4;background:rgba(42,53,42,0.92);padding:4px 16px;border-radius:4px;}
+
+  .lcd-death{position:absolute;inset:0;z-index:7;background:rgba(40,53,42,0.92);
+    display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#d8e0d4;}
   .lcd-death.show{display:flex;}
   .death-ico{font-size:48px;filter:grayscale(1);animation:floatY 2s ease-in-out infinite;}
   .death-txt{font-size:11px;font-weight:700;letter-spacing:0.16em;}
   .death-sub{font-size:8px;letter-spacing:0.1em;opacity:0.7;text-align:center;line-height:1.6;padding:0 20px;}
 
   /* CONTROLS */
-  .controls{
-    display:flex;justify-content:center;gap:16px;
-    margin-top:20px;
-  }
+  .controls{display:flex;justify-content:center;gap:16px;margin-top:20px;}
   .btn{
-    width:56px;height:56px;
-    border-radius:50%;
+    width:56px;height:56px;border-radius:50%;
     border:2px solid #000;background:#fff;
-    display:flex;flex-direction:column;
-    align-items:center;justify-content:center;gap:2px;
-    cursor:pointer;
-    transition:transform 0.1s, background 0.1s;
-    position:relative;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    cursor:pointer;transition:transform 0.1s, background 0.1s;
   }
   .btn:active{transform:scale(0.92);background:#000;}
   .btn:active .btn-ico,.btn:active .btn-lbl{color:#fff;filter:invert(1);}
   .btn-ico{font-size:17px;line-height:1;color:#000;}
-  .btn-lbl{
-    font-family:'Space Mono',monospace;
-    font-size:5.5px;font-weight:700;letter-spacing:0.08em;
-    color:var(--g4);
-  }
+  .btn-lbl{font-family:'Space Mono',monospace;font-size:5.5px;font-weight:700;letter-spacing:0.08em;color:var(--g4);}
   .btn.pressed{background:#000;}
   .btn.pressed .btn-ico{filter:invert(1);}
   .btn.pressed .btn-lbl{color:#fff;}
 
-  /* action menu (selectable icons) */
-  .action-bar{
-    display:flex;justify-content:space-between;gap:5px;
-    margin-top:16px;width:100%;
-  }
-  .action{
-    flex:1;
-    border:1px solid var(--g2);border-radius:9px;
-    padding:9px 2px;text-align:center;
-    background:#fff;transition:all 0.15s;
-    position:relative;
-  }
-  .action.sel{
-    border-color:#000;background:#000;
-  }
+  .action-bar{display:flex;justify-content:space-between;gap:5px;margin-top:16px;width:100%;}
+  .action{flex:1;border:1px solid var(--g2);border-radius:9px;padding:9px 2px;text-align:center;
+    background:#fff;transition:all 0.15s;}
+  .action.sel{border-color:#000;background:#000;}
   .action.sel .action-ico{filter:grayscale(1) brightness(0) invert(1);}
   .action.sel .action-lbl{color:#fff;}
-  .action-ico{font-size:16px;line-height:1;margin-bottom:4px;
-    filter:grayscale(1) brightness(0);}
-  .action-lbl{
-    font-family:'Space Mono',monospace;
-    font-size:5.5px;font-weight:700;letter-spacing:0.04em;
-    color:var(--g4);
+  .action-ico{font-size:16px;line-height:1;margin-bottom:4px;filter:grayscale(1) brightness(0);}
+  .action-lbl{font-family:'Space Mono',monospace;font-size:5.5px;font-weight:700;letter-spacing:0.04em;color:var(--g4);}
+
+  /* PHOTO BUTTON */
+  .photo-bar{width:100%;max-width:360px;margin-top:14px;}
+  .photo-btn{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+    padding:14px;background:#000;color:#fff;border:none;border-radius:14px;
+    font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:0.16em;cursor:pointer;
+    transition:transform 0.15s;
   }
+  .photo-btn:active{transform:scale(0.97);}
+  .photo-btn svg{width:16px;height:16px;}
 
   /* INFO panel */
-  .info{
-    width:100%;max-width:360px;margin-top:16px;
-    display:none;
-  }
+  .info{width:100%;max-width:360px;margin-top:16px;display:none;}
   .info.show{display:block;}
-  .info-card{
-    background:#fff;border:1px solid var(--g2);
-    border-radius:14px;padding:16px;margin-bottom:10px;
-  }
-  .info-label{
-    font-size:8px;font-weight:700;letter-spacing:0.2em;
-    color:var(--g4);margin-bottom:12px;
-    display:flex;align-items:center;gap:8px;text-transform:uppercase;
-  }
+  .info-card{background:#fff;border:1px solid var(--g2);border-radius:14px;padding:16px;margin-bottom:10px;}
+  .info-label{font-size:8px;font-weight:700;letter-spacing:0.2em;color:var(--g4);margin-bottom:12px;
+    display:flex;align-items:center;gap:8px;text-transform:uppercase;}
   .info-label::after{content:'';flex:1;height:1px;background:var(--g2);}
-  .info-row{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:8px 0;border-bottom:1px solid var(--g1);
-    font-size:11px;
-  }
+  .info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;
+    border-bottom:1px solid var(--g1);font-size:11px;}
   .info-row:last-child{border-bottom:none;}
   .info-row .k{color:var(--g4);letter-spacing:0.04em;}
   .info-row .v{font-weight:700;}
-
-  .evo-chain{
-    display:flex;align-items:center;gap:4px;flex-wrap:wrap;
-    justify-content:center;padding:8px 0;
-  }
-  .evo-node{
-    width:36px;height:36px;
-    border:1px solid var(--g2);border-radius:8px;
-    display:flex;align-items:center;justify-content:center;
-    font-size:18px;
-    filter:grayscale(1);
-  }
+  .evo-chain{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:center;padding:8px 0;}
+  .evo-node{width:36px;height:36px;border:1px solid var(--g2);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;font-size:18px;filter:grayscale(1);}
   .evo-node.done{border-color:#000;background:var(--g1);}
   .evo-node.current{border-color:var(--blue);border-width:2px;box-shadow:0 0 0 3px rgba(0,85,255,0.12);}
   .evo-node.locked{opacity:0.3;}
   .evo-arr{color:var(--g3);font-size:10px;}
-
-  .reset-btn{
-    width:100%;padding:13px;
-    background:#fff;color:var(--danger);
+  .reset-btn{width:100%;padding:13px;background:#fff;color:var(--danger);
     border:1px solid var(--danger);border-radius:8px;
-    font-family:'Space Mono',monospace;
-    font-size:9px;font-weight:700;letter-spacing:0.14em;
-    cursor:pointer;
-  }
+    font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.14em;cursor:pointer;}
   .reset-btn:active{background:var(--danger);color:#fff;}
 
-  .footer{
-    margin-top:18px;text-align:center;
-    font-family:'Space Mono',monospace;
-    font-size:7px;letter-spacing:0.12em;color:var(--g3);line-height:2;
-  }
+  .footer{margin-top:18px;text-align:center;font-family:'Space Mono',monospace;
+    font-size:7px;letter-spacing:0.12em;color:var(--g3);line-height:2;}
 
-  /* feeding/playing animation particles */
-  .particle{
-    position:absolute;z-index:4;
-    font-size:14px;pointer-events:none;
-    filter:grayscale(1) brightness(0.3);
+  .particle{position:absolute;z-index:4;font-size:14px;pointer-events:none;filter:grayscale(1) brightness(0.3);}
+  @keyframes floatUp{0%{transform:translateY(0) scale(0.5);opacity:0;}20%{opacity:1;transform:translateY(-6px) scale(1);}
+    100%{transform:translateY(-40px) scale(0.8);opacity:0;}}
+
+  /* PHOTO MODAL */
+  .photo-modal{
+    display:none;position:fixed;inset:0;z-index:1100;
+    background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    align-items:center;justify-content:center;padding:20px;
   }
-  @keyframes floatUp{
-    0%{transform:translateY(0) scale(0.5);opacity:0;}
-    20%{opacity:1;transform:translateY(-6px) scale(1);}
-    100%{transform:translateY(-40px) scale(0.8);opacity:0;}
-  }
+  .photo-modal.open{display:flex;animation:fadeIn 0.25s;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  .photo-content{background:#fff;border-radius:16px;width:100%;max-width:360px;padding:18px;
+    box-shadow:0 10px 50px rgba(0,0,0,0.4);max-height:92vh;overflow-y:auto;}
+  .photo-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .photo-title{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:0.18em;color:var(--g4);}
+  .photo-close{background:#000;color:#fff;border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;line-height:1;}
+  .photo-preview{border-radius:12px;overflow:hidden;border:1px solid var(--g2);margin-bottom:14px;}
+  .photo-preview canvas{width:100%;display:block;}
+  .photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .photo-action{padding:12px;border:1px solid #000;background:#fff;
+    font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.14em;border-radius:8px;cursor:pointer;}
+  .photo-action:active{transform:scale(0.97);}
+  .photo-action.primary{background:#000;color:#fff;}
 </style>
 </head>
 <body>
 
+<!-- WELCOME -->
+<div class="welcome" id="welcome">
+  <div class="welcome-logo">PI<b>X</b>L</div>
+  <div class="welcome-sub">Mascota Virtual</div>
+  <svg class="welcome-egg" viewBox="0 0 64 64">
+    <g fill="#2a352a">
+      <rect x="24" y="8" width="16" height="4"/>
+      <rect x="20" y="12" width="24" height="4"/>
+      <rect x="16" y="16" width="32" height="4"/>
+      <rect x="14" y="20" width="36" height="8"/>
+      <rect x="12" y="28" width="40" height="16"/>
+      <rect x="14" y="44" width="36" height="8"/>
+      <rect x="16" y="52" width="32" height="4"/>
+      <rect x="20" y="56" width="24" height="2"/>
+    </g>
+    <g fill="#c5d2c0">
+      <rect x="26" y="30" width="6" height="6"/>
+      <rect x="36" y="34" width="6" height="6"/>
+      <rect x="30" y="40" width="8" height="4"/>
+    </g>
+  </svg>
+  <div class="welcome-q">¿CÓMO SE LLAMARÁ TU MASCOTA?</div>
+  <input class="name-input" id="name-input" type="text" maxlength="10" placeholder="NOMBRE" autocomplete="off"/>
+  <div class="name-hint">MÁXIMO 10 CARACTERES</div>
+  <button class="welcome-btn" id="welcome-btn" disabled>NACER 🥚</button>
+</div>
+
+<!-- HEADER -->
 <div class="hdr">
   <div class="logo">PI<b>X</b>L</div>
   <div class="menu-btn" id="menu-btn">INFO</div>
 </div>
 
+<!-- DEVICE -->
 <div class="device">
   <div class="device-top">
     <div class="pet-name" id="pet-name">—</div>
@@ -330,28 +308,23 @@
   </div>
 
   <div class="lcd">
+    <div class="lcd-bg" id="lcd-bg"></div>
+
     <div class="lcd-stats">
-      <div class="stat">
-        <div class="stat-lbl">HAMBRE</div>
-        <div class="stat-track"><div class="stat-fill" id="bar-hunger" style="width:100%"></div></div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">ENERGÍA</div>
-        <div class="stat-track"><div class="stat-fill" id="bar-energy" style="width:100%"></div></div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">FELIZ</div>
-        <div class="stat-track"><div class="stat-fill" id="bar-happy" style="width:100%"></div></div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">HIGIENE</div>
-        <div class="stat-track"><div class="stat-fill" id="bar-hygiene" style="width:100%"></div></div>
-      </div>
+      <div class="stat"><div class="stat-lbl">HAMBRE</div><div class="stat-track"><div class="stat-fill" id="bar-hunger" style="width:100%"></div></div></div>
+      <div class="stat"><div class="stat-lbl">ENERGÍA</div><div class="stat-track"><div class="stat-fill" id="bar-energy" style="width:100%"></div></div></div>
+      <div class="stat"><div class="stat-lbl">FELIZ</div><div class="stat-track"><div class="stat-fill" id="bar-happy" style="width:100%"></div></div></div>
+      <div class="stat"><div class="stat-lbl">HIGIENE</div><div class="stat-track"><div class="stat-fill" id="bar-hygiene" style="width:100%"></div></div></div>
     </div>
 
     <canvas class="lcd-canvas" id="pet-canvas" width="96" height="96"></canvas>
 
     <div class="lcd-status" id="lcd-status"></div>
+
+    <div class="game-ui" id="game-ui">
+      <div class="game-score" id="game-score">RONDA 1/3</div>
+      <div class="game-prompt" id="game-prompt">¿IZQUIERDA O DERECHA?</div>
+    </div>
 
     <div class="evo-flash" id="evo-flash"></div>
     <div class="lcd-msg" id="lcd-msg"></div>
@@ -359,50 +332,35 @@
     <div class="lcd-death" id="lcd-death">
       <div class="death-ico">✝</div>
       <div class="death-txt" id="death-txt">SE HA IDO</div>
-      <div class="death-sub" id="death-sub">No sobrevivió. Cuídalo mejor la próxima vez.</div>
-      <button class="reset-btn" style="width:auto;padding:10px 20px;color:var(--lcd-bg);border-color:var(--lcd-bg);" onclick="resetPet()">EMPEZAR DE NUEVO</button>
+      <div class="death-sub" id="death-sub">No sobrevivió. Estuvo enfermo demasiado tiempo.</div>
+      <button class="reset-btn" style="width:auto;padding:10px 20px;color:#d8e0d4;border-color:#d8e0d4;" onclick="fullReset()">EMPEZAR DE NUEVO</button>
     </div>
   </div>
 
-  <!-- ACTION SELECTOR -->
   <div class="action-bar" id="action-bar">
-    <div class="action sel" data-action="feed">
-      <div class="action-ico">🍖</div>
-      <div class="action-lbl">COMER</div>
-    </div>
-    <div class="action" data-action="sleep">
-      <div class="action-ico">💤</div>
-      <div class="action-lbl">DORMIR</div>
-    </div>
-    <div class="action" data-action="play">
-      <div class="action-ico">🎮</div>
-      <div class="action-lbl">JUGAR</div>
-    </div>
-    <div class="action" data-action="clean">
-      <div class="action-ico">🧼</div>
-      <div class="action-lbl">LIMPIAR</div>
-    </div>
-    <div class="action" data-action="heal">
-      <div class="action-ico">💊</div>
-      <div class="action-lbl">CURAR</div>
-    </div>
+    <div class="action sel" data-action="feed"><div class="action-ico">🍖</div><div class="action-lbl">COMER</div></div>
+    <div class="action" data-action="sleep"><div class="action-ico">💤</div><div class="action-lbl">DORMIR</div></div>
+    <div class="action" data-action="play"><div class="action-ico">🎮</div><div class="action-lbl">JUGAR</div></div>
+    <div class="action" data-action="clean"><div class="action-ico">🧼</div><div class="action-lbl">LIMPIAR</div></div>
+    <div class="action" data-action="heal"><div class="action-ico">💊</div><div class="action-lbl">CURAR</div></div>
   </div>
 
-  <!-- 3 BUTTONS -->
   <div class="controls">
-    <div class="btn" id="btn-a">
-      <div class="btn-ico">◀</div>
-      <div class="btn-lbl">A · MOVER</div>
-    </div>
-    <div class="btn" id="btn-b">
-      <div class="btn-ico">●</div>
-      <div class="btn-lbl">B · ACCIÓN</div>
-    </div>
-    <div class="btn" id="btn-c">
-      <div class="btn-ico">▶</div>
-      <div class="btn-lbl">C · MOVER</div>
-    </div>
+    <div class="btn" id="btn-a"><div class="btn-ico">◀</div><div class="btn-lbl">A · MOVER</div></div>
+    <div class="btn" id="btn-b"><div class="btn-ico">●</div><div class="btn-lbl">B · ACCIÓN</div></div>
+    <div class="btn" id="btn-c"><div class="btn-ico">▶</div><div class="btn-lbl">C · MOVER</div></div>
   </div>
+</div>
+
+<!-- PHOTO BUTTON -->
+<div class="photo-bar">
+  <button class="photo-btn" id="photo-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+      <circle cx="12" cy="13" r="4"/>
+    </svg>
+    <span>HACER FOTO Y COMPARTIR</span>
+  </button>
 </div>
 
 <!-- INFO PANEL -->
@@ -415,757 +373,686 @@
     <div class="info-row"><span class="k">Cuidado</span><span class="v" id="i-care">—</span></div>
     <div class="info-row"><span class="k">Estado</span><span class="v" id="i-health">—</span></div>
   </div>
-
   <div class="info-card">
     <div class="info-label">EVOLUCIÓN</div>
     <div class="evo-chain" id="evo-chain"></div>
-    <div style="font-size:8px;color:var(--g4);text-align:center;margin-top:8px;letter-spacing:0.06em;line-height:1.6;" id="evo-hint">
-      Tu mascota evoluciona cada día. Cómo la cuides decide en qué se convierte.
-    </div>
+    <div style="font-size:8px;color:var(--g4);text-align:center;margin-top:8px;letter-spacing:0.06em;line-height:1.6;" id="evo-hint"></div>
   </div>
-
   <div class="info-card">
     <div class="info-label">CÓMO JUGAR</div>
     <div style="font-size:10px;line-height:1.8;color:var(--g4);letter-spacing:0.02em;">
       Usa <b style="color:#000;">A</b> y <b style="color:#000;">C</b> para moverte entre acciones, y <b style="color:#000;">B</b> para ejecutarlas. Mantén las cuatro barras altas. Si una llega a cero, tu mascota enferma. Si sigue enferma <b style="color:#000;">12 horas</b>, morirá. El tiempo corre aunque cierres la app.
     </div>
   </div>
-
   <button class="reset-btn" onclick="confirmReset()">⟲ REINICIAR MASCOTA</button>
+  <div class="footer">PIXL · MASCOTA VIRTUAL · DIGMARQUEZZ.ONLINE<br/><span id="yr"></span> · EL ESTADO SE GUARDA EN TU DISPOSITIVO</div>
+</div>
 
-  <div class="footer">
-    PIXL · MASCOTA VIRTUAL · DIGMARQUEZZ.ONLINE<br/>
-    <span id="yr"></span> · EL ESTADO SE GUARDA EN TU DISPOSITIVO
+<!-- PHOTO MODAL -->
+<div class="photo-modal" id="photo-modal">
+  <div class="photo-content">
+    <div class="photo-head">
+      <div class="photo-title">// POSTAL · PIXL</div>
+      <button class="photo-close" id="photo-close">×</button>
+    </div>
+    <div class="photo-preview"><canvas id="photo-canvas" width="600" height="800"></canvas></div>
+    <div class="photo-actions">
+      <button class="photo-action primary" id="photo-share">COMPARTIR ↗</button>
+      <button class="photo-action" id="photo-download">DESCARGAR ↓</button>
+    </div>
   </div>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
 
-// ─── CONFIG ─────────────────────────────────────────
-const SAVE_KEY = 'pixl-pet-v1';
-const STAGE_HOURS = [0, 30/3600, 48, 96, 168]; // egg(30s), baby, child, teen, adult (hours)
-const DEATH_HOURS = 12;       // hours sick before death
-const DECAY = {               // points lost per hour
-  hunger: 100/14,   // empty in ~14h
-  energy: 100/16,
-  happy: 100/18,
-  hygiene: 100/20,
-};
+// ─── CONFIG ───
+const SAVE_KEY = 'pixl-pet-v2';
+const STAGE_HOURS = [0, 30/3600, 48, 96, 168];
+const DEATH_HOURS = 12;
+const DECAY = { hunger:100/14, energy:100/16, happy:100/18, hygiene:100/20 };
 
-// Evolution branches (decided at "teen" stage based on care score)
 const EVOLUTIONS = {
-  egg:   {name:'HUEVO',  emoji:'🥚', stage:0},
-  baby:  {name:'BLOB',   emoji:'🫧', stage:1},
-  child: {name:'POLLO',  emoji:'🐤', stage:2},
-  // teen branches
-  teen_good: {name:'CRÍA NOBLE', emoji:'🦊', stage:3, branch:'good'},
-  teen_mid:  {name:'CRÍA',       emoji:'🐱', stage:3, branch:'mid'},
-  teen_bad:  {name:'CRÍA RUDA',  emoji:'🐀', stage:3, branch:'bad'},
-  // adult branches
-  adult_good: {name:'ZORRO',  emoji:'🦊', stage:4, branch:'good'},
-  adult_mid:  {name:'GATO',   emoji:'🐱', stage:4, branch:'mid'},
-  adult_bad:  {name:'RATA',   emoji:'🐀', stage:4, branch:'bad'},
+  egg:   {name:'HUEVO', emoji:'🥚', stage:0},
+  baby:  {name:'BLOB',  emoji:'🫧', stage:1},
+  child: {name:'POLLO', emoji:'🐤', stage:2},
+  teen_good:{name:'CRÍA NOBLE',emoji:'🦊',stage:3,branch:'good'},
+  teen_mid: {name:'CRÍA',      emoji:'🐱',stage:3,branch:'mid'},
+  teen_bad: {name:'CRÍA RUDA', emoji:'🐀',stage:3,branch:'bad'},
+  adult_good:{name:'ZORRO',emoji:'🦊',stage:4,branch:'good'},
+  adult_mid: {name:'GATO', emoji:'🐱',stage:4,branch:'mid'},
+  adult_bad: {name:'RATA', emoji:'🐀',stage:4,branch:'bad'},
 };
-
 const STAGE_NAMES = ['Huevo','Bebé','Cría','Joven','Adulto'];
 
-// ─── STATE ──────────────────────────────────────────
 let pet = null;
 let selectedAction = 0;
 const ACTIONS = ['feed','sleep','play','clean','heal'];
 
-function defaultPet(){
+// animation state machine
+let petState = 'idle';     // idle | eating | sleeping | playing | cleaning | healing
+let stateTimer = 0;        // frames remaining in current state
+let posX = 48, posY = 52;  // pet position on 96x96 grid
+let velX = 0.4, dirX = 1;  // idle wander
+let facing = 1;            // 1 right, -1 left
+let bobOffset = 0;
+let animFrame = 0;
+let actionPhase = 0;       // sub-phase counter for action anims
+
+function defaultPet(name){
   const now = Date.now();
   return {
-    born: now,
-    lastTick: now,
-    hunger: 100, energy: 100, happy: 100, hygiene: 100,
-    careSum: 0, careCount: 0,   // for branch calculation
-    branch: null,               // 'good' | 'mid' | 'bad'
-    stageKey: 'egg',
-    sick: false,
-    sickSince: null,
-    dead: false,
-    poop: 0,
-    sleeping: false,
+    name: name || 'PIXL',
+    born: now, lastTick: now,
+    hunger:100, energy:100, happy:100, hygiene:100,
+    careSum:0, careCount:0, branch:null,
+    stageKey:'egg', sick:false, sickSince:null, dead:false,
+    poop:0, sleeping:false,
   };
 }
 
 function load(){
-  try{
-    const raw = localStorage.getItem(SAVE_KEY);
-    if(raw){ pet = JSON.parse(raw); return; }
-  }catch(_){}
-  pet = defaultPet();
-  save();
+  try{ const raw = localStorage.getItem(SAVE_KEY); if(raw){ pet = JSON.parse(raw); return true; } }catch(_){}
+  return false;
 }
-function save(){ localStorage.setItem(SAVE_KEY, JSON.stringify(pet)); }
+function save(){ if(pet) localStorage.setItem(SAVE_KEY, JSON.stringify(pet)); }
 
-function resetPet(){
-  pet = defaultPet();
-  save();
+function fullReset(){
+  localStorage.removeItem(SAVE_KEY);
+  pet = null;
   $('lcd-death').classList.remove('show');
-  render();
-  showMsg('¡NUEVO COMIENZO!');
+  $('welcome').classList.remove('hide');
+  $('name-input').value='';
+  $('welcome-btn').disabled = true;
 }
-function confirmReset(){
-  if(confirm('¿Seguro que quieres reiniciar tu mascota? Se perderá su progreso.')) resetPet();
-}
-
-// ─── TIME SIMULATION ────────────────────────────────
-function simulate(){
-  if(pet.dead) return;
-  const now = Date.now();
-  const hoursPassed = (now - pet.lastTick) / 3600000;
-  if(hoursPassed <= 0){ pet.lastTick = now; return; }
-
-  // Egg stage: no decay
-  const ageH = (now - pet.born) / 3600000;
-  if(ageH >= STAGE_HOURS[1]){
-    // decay only when not sleeping (energy recovers if sleeping)
-    pet.hunger  = clamp(pet.hunger  - DECAY.hunger  * hoursPassed);
-    pet.happy   = clamp(pet.happy   - DECAY.happy   * hoursPassed);
-    pet.hygiene = clamp(pet.hygiene - DECAY.hygiene * hoursPassed);
-    if(pet.sleeping){
-      pet.energy = clamp(pet.energy + 20 * hoursPassed);
-      if(pet.energy >= 100) pet.sleeping = false;
-    } else {
-      pet.energy = clamp(pet.energy - DECAY.energy * hoursPassed);
-    }
-    // poop accumulation
-    if(Math.random() < hoursPassed * 0.4) pet.poop = Math.min(3, pet.poop + 1);
-    if(pet.poop > 0) pet.hygiene = clamp(pet.hygiene - pet.poop * 2 * hoursPassed);
-
-    // track care quality (avg of stats)
-    const avg = (pet.hunger + pet.energy + pet.happy + pet.hygiene) / 4;
-    pet.careSum += avg * hoursPassed;
-    pet.careCount += hoursPassed;
-  }
-
-  // sickness check
-  const anyZero = pet.hunger <= 0 || pet.energy <= 0 || pet.happy <= 0 || pet.hygiene <= 0;
-  if(anyZero && !pet.sick){
-    pet.sick = true;
-    pet.sickSince = now;
-  } else if(!anyZero && pet.sick){
-    pet.sick = false;
-    pet.sickSince = null;
-  }
-
-  // death check
-  if(pet.sick && pet.sickSince){
-    const sickH = (now - pet.sickSince) / 3600000;
-    if(sickH >= DEATH_HOURS){
-      pet.dead = true;
-    }
-  }
-
-  // evolution check
-  updateStage(ageH);
-
-  pet.lastTick = now;
-  save();
-}
+function confirmReset(){ if(confirm('¿Seguro que quieres reiniciar tu mascota? Se perderá su progreso.')) fullReset(); }
 
 function clamp(v){ return Math.max(0, Math.min(100, v)); }
+function careScore(){ return pet.careCount<=0 ? 100 : pet.careSum/pet.careCount; }
+function decideBranch(){ const s=careScore(); return s>=75?'good':s>=45?'mid':'bad'; }
 
-function careScore(){
-  if(pet.careCount <= 0) return 100;
-  return pet.careSum / pet.careCount;
+// ─── TIME SIMULATION ───
+function simulate(){
+  if(!pet || pet.dead) return;
+  const now = Date.now();
+  const hoursPassed = (now - pet.lastTick)/3600000;
+  if(hoursPassed<=0){ pet.lastTick=now; return; }
+  const ageH = (now-pet.born)/3600000;
+
+  if(ageH >= STAGE_HOURS[1]){
+    pet.hunger=clamp(pet.hunger-DECAY.hunger*hoursPassed);
+    pet.happy=clamp(pet.happy-DECAY.happy*hoursPassed);
+    pet.hygiene=clamp(pet.hygiene-DECAY.hygiene*hoursPassed);
+    if(pet.sleeping){ pet.energy=clamp(pet.energy+20*hoursPassed); if(pet.energy>=100)pet.sleeping=false; }
+    else pet.energy=clamp(pet.energy-DECAY.energy*hoursPassed);
+    if(Math.random()<hoursPassed*0.4) pet.poop=Math.min(3,pet.poop+1);
+    if(pet.poop>0) pet.hygiene=clamp(pet.hygiene-pet.poop*2*hoursPassed);
+    const avg=(pet.hunger+pet.energy+pet.happy+pet.hygiene)/4;
+    pet.careSum+=avg*hoursPassed; pet.careCount+=hoursPassed;
+  }
+
+  const anyZero = pet.hunger<=0||pet.energy<=0||pet.happy<=0||pet.hygiene<=0;
+  if(anyZero&&!pet.sick){ pet.sick=true; pet.sickSince=now; }
+  else if(!anyZero&&pet.sick){ pet.sick=false; pet.sickSince=null; }
+  if(pet.sick&&pet.sickSince){ if((now-pet.sickSince)/3600000>=DEATH_HOURS) pet.dead=true; }
+
+  updateStage(ageH);
+  pet.lastTick=now; save();
 }
 
+let pendingEvo=false;
 function updateStage(ageH){
-  let newStageKey = pet.stageKey;
+  let k=pet.stageKey;
+  if(ageH<STAGE_HOURS[1])k='egg';
+  else if(ageH<STAGE_HOURS[2])k='baby';
+  else if(ageH<STAGE_HOURS[3])k='child';
+  else if(ageH<STAGE_HOURS[4]){ if(!pet.branch)pet.branch=decideBranch(); k='teen_'+pet.branch; }
+  else { if(!pet.branch)pet.branch=decideBranch(); k='adult_'+pet.branch; }
+  if(k!==pet.stageKey){
+    const oldS=EVOLUTIONS[pet.stageKey]?.stage??-1, newS=EVOLUTIONS[k]?.stage??0;
+    pet.stageKey=k;
+    if(newS>oldS&&oldS>=0) pendingEvo=true;
+  }
+}
 
-  if(ageH < STAGE_HOURS[1]) newStageKey = 'egg';
-  else if(ageH < STAGE_HOURS[2]) newStageKey = 'baby';
-  else if(ageH < STAGE_HOURS[3]) newStageKey = 'child';
-  else if(ageH < STAGE_HOURS[4]){
-    // teen — decide branch
-    if(!pet.branch) pet.branch = decideBranch();
-    newStageKey = 'teen_' + pet.branch;
+// ─── DYNAMIC BACKGROUND (by hour) ───
+function updateBackground(){
+  const hr = new Date().getHours();
+  let bg;
+  if(hr>=6 && hr<9){
+    // dawn
+    bg='linear-gradient(180deg, #f5d8a8 0%, #e8c5a0 45%, #c5d2a0 100%)';
+  } else if(hr>=9 && hr<19){
+    // day
+    bg='linear-gradient(180deg, #add4e0 0%, #c5dde0 50%, #b8cba0 100%)';
+  } else if(hr>=19 && hr<21){
+    // sunset
+    bg='linear-gradient(180deg, #e89b6c 0%, #d4756a 40%, #8a6a8c 100%)';
   } else {
-    if(!pet.branch) pet.branch = decideBranch();
-    newStageKey = 'adult_' + pet.branch;
+    // night
+    bg='linear-gradient(180deg, #2a3550 0%, #3a4565 55%, #4a5570 100%)';
   }
+  $('lcd-bg').style.background=bg;
 
-  if(newStageKey !== pet.stageKey){
-    const oldStage = EVOLUTIONS[pet.stageKey]?.stage ?? -1;
-    const newStage = EVOLUTIONS[newStageKey]?.stage ?? 0;
-    pet.stageKey = newStageKey;
-    if(newStage > oldStage && oldStage >= 0){
-      triggerEvolution();
-    }
-  }
+  // night: add stars + moon via canvas overlay (drawn in render)
+  pet._isNight = (hr>=21 || hr<6);
+  pet._isDusk = (hr>=19 && hr<21);
 }
 
-function decideBranch(){
-  const score = careScore();
-  if(score >= 75) return 'good';
-  if(score >= 45) return 'mid';
-  return 'bad';
-}
-
-let pendingEvo = false;
-function triggerEvolution(){
-  pendingEvo = true;
-}
-
-// ─── PIXEL PET RENDERING ────────────────────────────
-const canvas = $('pet-canvas');
-const ctx = canvas.getContext('2d');
-const GRID = 96;
-const PX = 1; // canvas is 96x96, scaled by CSS
-
-// Pixel art sprites (16x16 grids, scaled to fit). 1 = dark pixel.
-// Each pet has 2 frames for idle animation.
+// ─── SPRITES (2 idle frames each) ───
 const SPRITES = {
-  egg: [
-    [
-      "0000011111100000",
-      "0000111111110000",
-      "0001111111111000",
-      "0011111111111100",
-      "0011111111111100",
-      "0111111111111110",
-      "0111111111111110",
-      "0111111011111110",
-      "0111110001111110",
-      "0111111011111110",
-      "0111111111111110",
-      "0011111111111100",
-      "0011111111111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0000011111100000",
-    ],
-    [
-      "0000011111100000",
-      "0000111111110000",
-      "0001111111111000",
-      "0011111111111100",
-      "0011111111111100",
-      "0111111111111110",
-      "0111101111011110",
-      "0111111111111110",
-      "0111111111111110",
-      "0111110111111110",
-      "0111111111111110",
-      "0011111111111100",
-      "0011111111111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0000011111100000",
-    ],
+  egg:[
+    ["0000011111100000","0000111111110000","0001111111111000","0011111111111100","0011111111111100","0111111111111110","0111111111111110","0111111011111110","0111110001111110","0111111011111110","0111111111111110","0011111111111100","0011111111111100","0001111111111000","0000111111110000","0000011111100000"],
+    ["0000011111100000","0000111111110000","0001111111111000","0011111111111100","0011111111111100","0111111111111110","0111101111011110","0111111111111110","0111111111111110","0111110111111110","0111111111111110","0011111111111100","0011111111111100","0001111111111000","0000111111110000","0000011111100000"]
   ],
-  baby: [
-    [
-      "0000000000000000",
-      "0000001111000000",
-      "0000011111100000",
-      "0000111111110000",
-      "0001111111111000",
-      "0011111111111100",
-      "0011011111101100",
-      "0011011111101100",
-      "0011111111111100",
-      "0011111111111100",
-      "0011110000111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0000011111100000",
-      "0000000000000000",
-      "0000000000000000",
-    ],
-    [
-      "0000000000000000",
-      "0000001111000000",
-      "0000011111100000",
-      "0000111111110000",
-      "0001111111111000",
-      "0011111111111100",
-      "0011111111111100",
-      "0011011111101100",
-      "0011011111101100",
-      "0011111111111100",
-      "0011110000111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0000011111100000",
-      "0000000000000000",
-      "0000000000000000",
-    ],
+  baby:[
+    ["0000000000000000","0000001111000000","0000011111100000","0000111111110000","0001111111111000","0011111111111100","0011011111101100","0011011111101100","0011111111111100","0011111111111100","0011110000111100","0001111111111000","0000111111110000","0000011111100000","0000000000000000","0000000000000000"],
+    ["0000000000000000","0000001111000000","0000011111100000","0000111111110000","0001111111111000","0011111111111100","0011111111111100","0011011111101100","0011011111101100","0011111111111100","0011110000111100","0001111111111000","0000111111110000","0000011111100000","0000000000000000","0000000000000000"]
   ],
-  child: [
-    [
-      "0000001111000000",
-      "0000011111100000",
-      "0000110110110000",
-      "0000111111110000",
-      "0001111111111000",
-      "0011111111111100",
-      "0011011111101100",
-      "0011011111101100",
-      "0011111111111100",
-      "0011111001111100",
-      "0011111111111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0000110000110000",
-      "0000110000110000",
-      "0000000000000000",
-    ],
-    [
-      "0000001111000000",
-      "0000011111100000",
-      "0000110110110000",
-      "0000111111110000",
-      "0001111111111000",
-      "0011111111111100",
-      "0011011111101100",
-      "0011011111101100",
-      "0011111111111100",
-      "0011111001111100",
-      "0011111111111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0001100000011000",
-      "0001100000011000",
-      "0000000000000000",
-    ],
+  child:[
+    ["0000001111000000","0000011111100000","0000110110110000","0000111111110000","0001111111111000","0011111111111100","0011011111101100","0011011111101100","0011111111111100","0011111001111100","0011111111111100","0001111111111000","0000111111110000","0000110000110000","0000110000110000","0000000000000000"],
+    ["0000001111000000","0000011111100000","0000110110110000","0000111111110000","0001111111111000","0011111111111100","0011011111101100","0011011111101100","0011111111111100","0011111001111100","0011111111111100","0001111111111000","0000111111110000","0001100000011000","0001100000011000","0000000000000000"]
   ],
-  // GOOD branch — fox-like (pointed ears, tail)
-  teen_good: [
-    [
-      "0110000000001100",
-      "0111000000011100",
-      "0011100000111000",
-      "0001111111110000",
-      "0011111111111000",
-      "0111011111101100",
-      "0111011111101110",
-      "0111111111111110",
-      "0111110000111110",
-      "0011111111111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0000110000110000",
-      "0001100000011000",
-      "0011000000001100",
-      "0000000000000000",
-    ],
-    [
-      "0110000000001100",
-      "0111000000011100",
-      "0011100000111000",
-      "0001111111110000",
-      "0011111111111000",
-      "0111011111101100",
-      "0111011111101110",
-      "0111111111111110",
-      "0111110000111110",
-      "0011111111111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0000110000110000",
-      "0001100000011000",
-      "0000110000110000",
-      "0000000000000000",
-    ],
+  teen_good:[
+    ["0110000000001100","0111000000011100","0011100000111000","0001111111110000","0011111111111000","0111011111101100","0111011111101110","0111111111111110","0111110000111110","0011111111111100","0001111111111000","0000111111110000","0000110000110000","0001100000011000","0011000000001100","0000000000000000"],
+    ["0110000000001100","0111000000011100","0011100000111000","0001111111110000","0011111111111000","0111011111101100","0111011111101110","0111111111111110","0111110000111110","0011111111111100","0001111111111000","0000111111110000","0000110000110000","0001100000011000","0000110000110000","0000000000000000"]
   ],
-  // MID branch — cat-like
-  teen_mid: [
-    [
-      "0100000000000010",
-      "0110000000000110",
-      "0111000000001110",
-      "0011111111111000",
-      "0011111111111100",
-      "0111011111101100",
-      "0111011111101110",
-      "0111111111111110",
-      "0111111001111110",
-      "0111110110111110",
-      "0011111111111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0001100110011000",
-      "0011000110001100",
-      "0000000000000000",
-    ],
-    [
-      "0100000000000010",
-      "0110000000000110",
-      "0111000000001110",
-      "0011111111111000",
-      "0011111111111100",
-      "0111011111101100",
-      "0111011111101110",
-      "0111111111111110",
-      "0111111001111110",
-      "0111110110111110",
-      "0011111111111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0001100110011000",
-      "0001100110011000",
-      "0000000000000000",
-    ],
+  teen_mid:[
+    ["0100000000000010","0110000000000110","0111000000001110","0011111111111000","0011111111111100","0111011111101100","0111011111101110","0111111111111110","0111111001111110","0111110110111110","0011111111111100","0001111111111000","0000111111110000","0001100110011000","0011000110001100","0000000000000000"],
+    ["0100000000000010","0110000000000110","0111000000001110","0011111111111000","0011111111111100","0111011111101100","0111011111101110","0111111111111110","0111111001111110","0111110110111110","0011111111111100","0001111111111000","0000111111110000","0001100110011000","0001100110011000","0000000000000000"]
   ],
-  // BAD branch — rat-like (round ears, thin tail)
-  teen_bad: [
-    [
-      "0011000000110000",
-      "0111100001111000",
-      "0111100001111000",
-      "0011111111110000",
-      "0011111111111000",
-      "0111011111101100",
-      "0111011111101100",
-      "0111111111111100",
-      "0111111111111100",
-      "0011111001111110",
-      "0011111111111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0000110000110000",
-      "0000110000111110",
-      "0000000000001110",
-    ],
-    [
-      "0011000000110000",
-      "0111100001111000",
-      "0111100001111000",
-      "0011111111110000",
-      "0011111111111000",
-      "0111011111101100",
-      "0111011111101100",
-      "0111111111111100",
-      "0111111111111100",
-      "0011111001111110",
-      "0011111111111100",
-      "0001111111111000",
-      "0000111111110000",
-      "0000110000110000",
-      "0001110000110000",
-      "0111000000000000",
-    ],
+  teen_bad:[
+    ["0011000000110000","0111100001111000","0111100001111000","0011111111110000","0011111111111000","0111011111101100","0111011111101100","0111111111111100","0111111111111100","0011111001111110","0011111111111100","0001111111111000","0000111111110000","0000110000110000","0000110000111110","0000000000001110"],
+    ["0011000000110000","0111100001111000","0111100001111000","0011111111110000","0011111111111000","0111011111101100","0111011111101100","0111111111111100","0111111111111100","0011111001111110","0011111111111100","0001111111111000","0000111111110000","0000110000110000","0001110000110000","0111000000000000"]
   ],
 };
-// adults reuse teen sprites but bigger; map adult->teen sprite
-SPRITES.adult_good = SPRITES.teen_good;
-SPRITES.adult_mid = SPRITES.teen_mid;
-SPRITES.adult_bad = SPRITES.teen_bad;
+SPRITES.adult_good=SPRITES.teen_good;
+SPRITES.adult_mid=SPRITES.teen_mid;
+SPRITES.adult_bad=SPRITES.teen_bad;
 
-let animFrame = 0;
-let bobOffset = 0;
+// ─── CANVAS RENDER ───
+const canvas=$('pet-canvas');
+const ctx=canvas.getContext('2d');
+const GRID=96;
+
+function drawStarsAndMoon(){
+  if(!pet._isNight) return;
+  ctx.fillStyle='rgba(255,255,255,0.55)';
+  const stars=[[14,16],[28,10],[44,18],[62,12],[78,20],[20,28],[70,30],[84,14]];
+  const tw=Math.sin(animFrame*0.3);
+  stars.forEach((s,i)=>{ if((i+Math.floor(animFrame*0.2))%4!==0||tw>-0.5){ ctx.fillRect(s[0],s[1],1.5,1.5); } });
+  // crescent moon top-right
+  ctx.fillStyle='rgba(245,240,210,0.7)';
+  ctx.beginPath(); ctx.arc(80,16,7,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=pet._isNight?'#3a4565':'#3a4565';
+  // approximate using bg color overlay
+  const bgc='#3a4565';
+  ctx.fillStyle=bgc; ctx.beginPath(); ctx.arc(77,14,7,0,Math.PI*2); ctx.fill();
+}
 
 function drawPet(){
   ctx.clearRect(0,0,GRID,GRID);
-  if(pet.dead){
-    drawDeadPet();
+  if(!pet) return;
+  if(pet.dead){ drawDeadPet(); return; }
+
+  drawStarsAndMoon();
+
+  // During minigame: draw only a small attentive pet at the bottom, leaving center for the prompt UI
+  const stage=EVOLUTIONS[pet.stageKey]?.stage??0;
+  const sprite=SPRITES[pet.stageKey]||SPRITES.egg;
+  const frame=sprite[animFrame%sprite.length];
+
+  if(petState==='gaming'){
+    const cell=2.0; const spriteW=16*cell;
+    const drawX=GRID/2 - spriteW/2;
+    const drawY=GRID - spriteW - 6 + Math.sin(animFrame*0.4)*1.5;
+    ctx.save();
+    ctx.fillStyle='#2a352a';
+    const cx=drawX+spriteW/2;
+    if(facing===-1){ ctx.translate(cx,0); ctx.scale(-1,1); ctx.translate(-cx,0); }
+    for(let y=0;y<16;y++) for(let x=0;x<16;x++) if(frame[y][x]==='1')
+      ctx.fillRect(Math.floor(drawX+x*cell),Math.floor(drawY+y*cell),Math.ceil(cell),Math.ceil(cell));
+    ctx.restore();
     return;
   }
 
-  const sprite = SPRITES[pet.stageKey] || SPRITES.egg;
-  const frame = sprite[animFrame % sprite.length];
-  const stage = EVOLUTIONS[pet.stageKey]?.stage ?? 0;
+  const cell = stage>=4?3.0:stage>=3?2.8:stage>=2?2.6:stage>=1?2.5:2.7;
+  const spriteW=16*cell;
 
-  // scale: bigger as it grows, but with generous padding in the 96px canvas
-  const cell = stage >= 4 ? 3.0 : stage >= 3 ? 2.8 : stage >= 2 ? 2.6 : stage >= 1 ? 2.5 : 2.7;
-  const spriteW = 16 * cell;
-  const offX = (GRID - spriteW) / 2;
-  const offY = (GRID - spriteW) / 2 + bobOffset;
+  // position: egg stays centered; others wander in idle
+  let drawX, drawY=posY - spriteW/2 + bobOffset;
+  if(stage===0){ drawX=GRID/2 - spriteW/2; drawY=GRID/2 - spriteW/2 + bobOffset; }
+  else { drawX=posX - spriteW/2; }
 
-  ctx.fillStyle = '#2a352a';
+  // action-specific transforms
+  let lean=0, squash=0, extraY=0;
+  if(petState==='eating'){
+    const bite = Math.sin(actionPhase*0.8);
+    lean = bite*4; extraY = Math.abs(bite)*2;
+  } else if(petState==='cleaning'){
+    squash = Math.sin(actionPhase*0.6)*1.5;
+  } else if(petState==='healing'){
+    extraY = -Math.abs(Math.sin(actionPhase*0.5))*3;
+  } else if(petState==='sleeping' || pet.sleeping){
+    extraY = 6;
+  }
 
-  // sleeping: draw lying down (skip if egg)
-  const sleeping = pet.sleeping && stage >= 1;
+  ctx.save();
+  ctx.fillStyle='#2a352a';
+  const cx = drawX + spriteW/2;
+  if(facing===-1){ ctx.translate(cx,0); ctx.scale(-1,1); ctx.translate(-cx,0); }
 
-  for(let y = 0; y < 16; y++){
-    for(let x = 0; x < 16; x++){
-      if(frame[y][x] === '1'){
-        let dx = offX + x * cell;
-        let dy = offY + y * cell;
-        ctx.fillRect(Math.floor(dx), Math.floor(dy), Math.ceil(cell), Math.ceil(cell));
+  for(let y=0;y<16;y++){
+    for(let x=0;x<16;x++){
+      if(frame[y][x]==='1'){
+        let dx=drawX + x*cell + lean;
+        let dy=drawY + y*cell + extraY + (squash*(y/16));
+        ctx.fillRect(Math.floor(dx),Math.floor(dy),Math.ceil(cell),Math.ceil(cell));
       }
     }
   }
+  ctx.restore();
 
-  // sick indicator: skull bubble
-  if(pet.sick){
-    ctx.font = '14px monospace';
-    ctx.fillText('💀', offX + spriteW - 4, offY + 4);
+  // action props
+  if(petState==='eating'){
+    const fx = facing===1 ? drawX+spriteW+2 : drawX-10;
+    ctx.fillStyle='#2a352a'; ctx.font='12px monospace';
+    ctx.fillText('🍖', fx, drawY+spriteW-4);
+  }
+  if(petState==='cleaning'){
+    ctx.fillStyle='rgba(42,53,42,0.5)';
+    for(let i=0;i<4;i++){
+      const bx=drawX + (i*5+actionPhase*2)%spriteW;
+      const by=drawY - 4 - (i*3 + (actionPhase%10));
+      ctx.beginPath(); ctx.arc(bx,by,1.5+i*0.4,0,Math.PI*2); ctx.fill();
+    }
+  }
+  if(petState==='healing'){
+    ctx.fillStyle='#2a352a'; ctx.font='10px monospace';
+    ctx.fillText('💊', drawX+spriteW/2-5, drawY-2);
   }
 
-  // sleeping Z's
-  if(sleeping){
-    ctx.fillStyle = '#2a352a';
-    ctx.font = 'bold 10px monospace';
-    ctx.fillText('z', offX + spriteW + 2, offY + 8);
-    ctx.font = 'bold 7px monospace';
-    ctx.fillText('z', offX + spriteW + 8, offY + 2);
+  if(pet.sick && petState==='idle'){
+    ctx.font='12px monospace'; ctx.fillText('💀', drawX+spriteW-4, drawY+2);
+  }
+  if((petState==='sleeping'||pet.sleeping) && stage>=1){
+    ctx.fillStyle='#2a352a'; ctx.font='bold 10px monospace';
+    ctx.fillText('z', drawX+spriteW+2, drawY+8);
+    ctx.font='bold 7px monospace'; ctx.fillText('z', drawX+spriteW+8, drawY+2);
   }
 }
 
 function drawDeadPet(){
-  ctx.fillStyle = '#2a352a';
-  ctx.font = '36px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('✝', GRID/2, GRID/2 + 14);
-  ctx.textAlign = 'left';
+  ctx.fillStyle='#2a352a'; ctx.font='36px monospace';
+  ctx.textAlign='center'; ctx.fillText('✝',GRID/2,GRID/2+14); ctx.textAlign='left';
 }
 
-// idle animation loop
-setInterval(() => {
-  if(pet && !pet.dead){
-    animFrame++;
-    bobOffset = Math.sin(animFrame * 0.5) * 1.2;
-    drawPet();
-  }
-}, 500);
+// ─── ANIMATION LOOP ───
+function tickAnim(){
+  if(!pet || pet.dead){ drawPet(); return; }
+  animFrame++;
+  const stage=EVOLUTIONS[pet.stageKey]?.stage??0;
 
-// ─── ACTIONS ────────────────────────────────────────
-function doAction(action){
-  if(pet.dead) return;
-  const stage = EVOLUTIONS[pet.stageKey]?.stage ?? 0;
-  if(stage === 0){ showMsg('EL HUEVO AÚN NO ECLOSIONA...'); return; }
+  // state machine
+  if(petState!=='idle' && petState!=='sleeping'){
+    actionPhase++;
+    stateTimer--;
+    if(petState==='playing'){
+      // hop
+      posY = 52 - Math.abs(Math.sin(actionPhase*0.4))*8;
+    }
+    if(stateTimer<=0){ endAction(); }
+  } else {
+    // idle wander (only walking stages, not egg, not sleeping)
+    if(stage>=1 && !pet.sleeping && petState==='idle'){
+      posX += velX*dirX;
+      const margin=18;
+      if(posX>GRID-margin){ dirX=-1; facing=-1; }
+      if(posX<margin){ dirX=1; facing=1; }
+      // occasional pause / direction change
+      if(Math.random()<0.01){ dirX*=-1; facing=dirX; }
+      bobOffset=Math.sin(animFrame*0.4)*1.5;
+      posY=52;
+    } else {
+      bobOffset=Math.sin(animFrame*0.35)*1.2;
+    }
+  }
+  drawPet();
+}
+setInterval(tickAnim, 90);
+
+// ─── ACTIONS with animations ───
+function startAction(action){
+  if(!pet || pet.dead) return;
+  const stage=EVOLUTIONS[pet.stageKey]?.stage??0;
+  if(stage===0){ showMsg('EL HUEVO AÚN NO ECLOSIONA...'); return; }
+  if(petState!=='idle' && petState!=='sleeping') return; // busy
 
   switch(action){
     case 'feed':
-      if(pet.hunger >= 98){ showMsg('NO TIENE HAMBRE'); return; }
-      pet.hunger = clamp(pet.hunger + 35);
-      spawnParticle('🍖'); showMsg('ÑAM ÑAM...');
+      if(pet.hunger>=98){ showMsg('NO TIENE HAMBRE'); return; }
+      petState='eating'; actionPhase=0; stateTimer=22;
+      showMsg('ÑAM ÑAM...');
       break;
     case 'sleep':
-      if(pet.sleeping){ pet.sleeping = false; showMsg('¡DESPIERTA!'); }
-      else { pet.sleeping = true; showMsg('ZZZ... DURMIENDO'); }
-      break;
+      if(pet.sleeping){ pet.sleeping=false; petState='idle'; showMsg('¡DESPIERTA!'); }
+      else { pet.sleeping=true; petState='sleeping'; showMsg('ZZZ... DURMIENDO'); }
+      save(); render(); return;
     case 'play':
-      if(pet.energy < 15){ showMsg('DEMASIADO CANSADO'); return; }
-      pet.happy = clamp(pet.happy + 35);
-      pet.energy = clamp(pet.energy - 10);
-      spawnParticle('❤'); showMsg('¡QUÉ DIVERTIDO!');
-      break;
+      if(pet.energy<15){ showMsg('DEMASIADO CANSADO'); return; }
+      startMinigame(); return;
     case 'clean':
-      if(pet.poop > 0){ pet.poop = 0; pet.hygiene = clamp(pet.hygiene + 40); spawnParticle('✨'); showMsg('¡TODO LIMPIO!'); }
-      else if(pet.hygiene >= 98){ showMsg('YA ESTÁ LIMPIO'); }
-      else { pet.hygiene = clamp(pet.hygiene + 40); spawnParticle('✨'); showMsg('¡RELUCIENTE!'); }
+      petState='cleaning'; actionPhase=0; stateTimer=20;
+      showMsg('FROTA FROTA...');
       break;
     case 'heal':
       if(!pet.sick){ showMsg('NO ESTÁ ENFERMO'); return; }
-      // healing requires raising the zeroed stat
-      pet.hunger = Math.max(pet.hunger, 30);
-      pet.energy = Math.max(pet.energy, 30);
-      pet.happy = Math.max(pet.happy, 30);
-      pet.hygiene = Math.max(pet.hygiene, 30);
-      pet.sick = false; pet.sickSince = null;
-      spawnParticle('💊'); showMsg('¡RECUPERADO!');
+      petState='healing'; actionPhase=0; stateTimer=20;
+      showMsg('TOMANDO MEDICINA...');
       break;
   }
-  save();
-  render();
 }
 
-function spawnParticle(emoji){
-  const lcd = document.querySelector('.lcd');
-  const p = document.createElement('div');
-  p.className = 'particle';
-  p.textContent = emoji;
-  p.style.left = (42 + Math.random()*16) + '%';
-  p.style.top = '52%';
-  p.style.animation = 'floatUp 1s ease forwards';
-  lcd.appendChild(p);
-  setTimeout(() => p.remove(), 1000);
-}
-
-let msgTimeout;
-function showMsg(txt){
-  $('lcd-msg').textContent = txt;
-  $('lcd-msg').classList.add('show');
-  clearTimeout(msgTimeout);
-  msgTimeout = setTimeout(() => $('lcd-msg').classList.remove('show'), 2000);
-}
-
-// ─── RENDER ─────────────────────────────────────────
-function render(){
-  if(pendingEvo){
-    pendingEvo = false;
-    playEvolution();
+function endAction(){
+  const prev=petState;
+  petState = pet.sleeping ? 'sleeping' : 'idle';
+  posY=52;
+  if(prev==='eating'){ pet.hunger=clamp(pet.hunger+35); spawnParticle('🦴'); showMsg('¡QUÉ RICO!'); }
+  else if(prev==='cleaning'){
+    if(pet.poop>0){ pet.poop=0; pet.hygiene=clamp(pet.hygiene+40); }
+    else pet.hygiene=clamp(pet.hygiene+40);
+    spawnParticle('✨'); showMsg('¡RELUCIENTE!');
   }
-
-  const stage = EVOLUTIONS[pet.stageKey]?.stage ?? 0;
-  const info = EVOLUTIONS[pet.stageKey];
-
-  // name + age
-  $('pet-name').textContent = info?.name || '—';
-  const ageH = (Date.now() - pet.born) / 3600000;
-  const ageD = Math.floor(ageH / 24);
-  const ageHr = Math.floor(ageH % 24);
-  $('pet-age').textContent = ageD > 0 ? `${ageD}D ${ageHr}H` : `${ageHr}H`;
-
-  // bars
-  setBar('bar-hunger', pet.hunger);
-  setBar('bar-energy', pet.energy);
-  setBar('bar-happy', pet.happy);
-  setBar('bar-hygiene', pet.hygiene);
-
-  // status icons
-  const statusEl = $('lcd-status');
-  statusEl.innerHTML = '';
-  if(pet.dead){
-    $('lcd-death').classList.add('show');
-    const careLvl = careScore();
-    $('death-sub').textContent = 'No sobrevivió. Estuvo enfermo demasiado tiempo.';
-  } else {
-    $('lcd-death').classList.remove('show');
-    if(pet.sick) statusEl.innerHTML += '<span class="status-ico">🤒</span>';
-    if(pet.sleeping) statusEl.innerHTML += '<span class="status-ico">💤</span>';
-    if(pet.poop > 0){
-      for(let i=0;i<pet.poop;i++) statusEl.innerHTML += '<span class="status-ico">💩</span>';
-    }
+  else if(prev==='healing'){
+    pet.hunger=Math.max(pet.hunger,30); pet.energy=Math.max(pet.energy,30);
+    pet.happy=Math.max(pet.happy,30); pet.hygiene=Math.max(pet.hygiene,30);
+    pet.sick=false; pet.sickSince=null; spawnParticle('💗'); showMsg('¡RECUPERADO!');
   }
+  save(); render();
+}
 
+// ─── MINIGAME: guess direction ───
+let game=null;
+function startMinigame(){
+  game={ round:1, total:3, score:0, target:null, waiting:false };
+  petState='gaming';
+  posX=GRID/2; posY=52; bobOffset=0;
+  $('game-ui').classList.add('show');
   drawPet();
+  nextRound();
+}
+function nextRound(){
+  if(game.round>game.total){ endMinigame(); return; }
+  game.target = Math.random()<0.5 ? -1 : 1; // -1 left, 1 right
+  game.waiting=true;
+  $('game-score').textContent=`RONDA ${game.round}/${game.total} · ✓ ${game.score}`;
+  $('game-prompt').textContent='◀  ¿A o C?  ▶';
+  // pet looks anxious, faces center
+  facing=1;
+}
+function guessDirection(guess){
+  if(!game || !game.waiting) return;
+  game.waiting=false;
+  const correct = guess===game.target;
+  // pet runs in the target direction
+  facing=game.target; dirX=game.target;
+  if(correct){
+    game.score++;
+    $('game-prompt').textContent='¡BIEN! 🎉';
+  } else {
+    $('game-prompt').textContent='¡FALLO! 😣';
+  }
+  game.round++;
+  setTimeout(()=>{ if(game) nextRound(); }, 900);
+}
+function endMinigame(){
+  const won=game.score>=2;
+  $('game-ui').classList.remove('show');
+  petState='idle';
+  const gain = game.score*12;          // up to 36
+  pet.happy=clamp(pet.happy+gain);
+  pet.energy=clamp(pet.energy-12);
+  showMsg(won?`¡GANASTE! +${gain} FELIZ`:`+${gain} FELIZ`);
+  if(navigator.vibrate&&won) navigator.vibrate([60,40,60]);
+  game=null; save(); render();
+}
+
+// ─── PARTICLES / MSG ───
+function spawnParticle(emoji){
+  const lcd=document.querySelector('.lcd');
+  const p=document.createElement('div'); p.className='particle'; p.textContent=emoji;
+  p.style.left=(42+Math.random()*16)+'%'; p.style.top='50%';
+  p.style.animation='floatUp 1s ease forwards';
+  lcd.appendChild(p); setTimeout(()=>p.remove(),1000);
+}
+let msgTimeout;
+function showMsg(t){ $('lcd-msg').textContent=t; $('lcd-msg').classList.add('show');
+  clearTimeout(msgTimeout); msgTimeout=setTimeout(()=>$('lcd-msg').classList.remove('show'),2000); }
+
+// ─── RENDER ───
+function render(){
+  if(!pet) return;
+  if(pendingEvo){ pendingEvo=false; playEvolution(); }
+  updateBackground();
+
+  const info=EVOLUTIONS[pet.stageKey]; const stage=info?.stage??0;
+  $('pet-name').textContent = pet.name || info?.name || '—';
+  const ageH=(Date.now()-pet.born)/3600000, ageD=Math.floor(ageH/24), ageHr=Math.floor(ageH%24);
+  $('pet-age').textContent = ageD>0?`${ageD}D ${ageHr}H`:`${ageHr}H`;
+
+  setBar('bar-hunger',pet.hunger); setBar('bar-energy',pet.energy);
+  setBar('bar-happy',pet.happy); setBar('bar-hygiene',pet.hygiene);
+
+  const st=$('lcd-status'); st.innerHTML='';
+  if(pet.dead){ $('lcd-death').classList.add('show'); }
+  else {
+    $('lcd-death').classList.remove('show');
+    if(pet.sick) st.innerHTML+='<span class="status-ico">🤒</span>';
+    if(pet.poop>0){ for(let i=0;i<pet.poop;i++) st.innerHTML+='<span class="status-ico">💩</span>'; }
+  }
   renderInfo();
 }
 
-function setBar(id, val){
-  const el = $(id);
-  el.style.width = val + '%';
-  if(val <= 20) el.classList.add('low');
-  else el.classList.remove('low');
-}
+function setBar(id,v){ const el=$(id); el.style.width=v+'%'; el.classList.toggle('low',v<=20); }
 
 function renderInfo(){
-  const info = EVOLUTIONS[pet.stageKey];
-  const stage = info?.stage ?? 0;
-  $('i-name').textContent = info?.name || '—';
-  $('i-stage').textContent = STAGE_NAMES[stage] || '—';
-  const ageH = (Date.now() - pet.born) / 3600000;
-  const ageD = Math.floor(ageH / 24);
-  $('i-age').textContent = ageD > 0 ? `${ageD} días` : `${Math.floor(ageH)} horas`;
-  const score = careScore();
-  $('i-care').textContent = score >= 75 ? 'EXCELENTE' : score >= 45 ? 'NORMAL' : 'DESCUIDADO';
-  $('i-health').textContent = pet.dead ? '✝ MUERTO' : pet.sick ? '🤒 ENFERMO' : pet.sleeping ? '💤 DURMIENDO' : '✓ SANO';
+  const info=EVOLUTIONS[pet.stageKey], stage=info?.stage??0;
+  $('i-name').textContent=pet.name||'—';
+  $('i-stage').textContent=STAGE_NAMES[stage]||'—';
+  const ageH=(Date.now()-pet.born)/3600000, ageD=Math.floor(ageH/24);
+  $('i-age').textContent=ageD>0?`${ageD} días`:`${Math.floor(ageH)} horas`;
+  const sc=careScore();
+  $('i-care').textContent=sc>=75?'EXCELENTE':sc>=45?'NORMAL':'DESCUIDADO';
+  $('i-health').textContent=pet.dead?'✝ MUERTO':pet.sick?'🤒 ENFERMO':pet.sleeping?'💤 DURMIENDO':'✓ SANO';
 
-  // evolution chain
-  const chain = $('evo-chain');
-  const branch = pet.branch || 'mid';
-  const chainKeys = ['egg','baby','child','teen_'+branch,'adult_'+branch];
-  chain.innerHTML = '';
-  chainKeys.forEach((key, i) => {
-    const e = EVOLUTIONS[key];
-    const node = document.createElement('div');
-    let cls = 'evo-node';
-    if(key === pet.stageKey) cls += ' current';
-    else if(stage > (e?.stage ?? 0)) cls += ' done';
-    else if(stage < (e?.stage ?? 0)) cls += ' locked';
-    node.className = cls;
-    node.textContent = e?.emoji || '?';
-    chain.appendChild(node);
-    if(i < chainKeys.length - 1){
-      const arr = document.createElement('span');
-      arr.className = 'evo-arr';
-      arr.textContent = '→';
-      chain.appendChild(arr);
-    }
+  const chain=$('evo-chain'); const branch=pet.branch||'mid';
+  const keys=['egg','baby','child','teen_'+branch,'adult_'+branch];
+  chain.innerHTML='';
+  keys.forEach((key,i)=>{
+    const e=EVOLUTIONS[key]; const node=document.createElement('div');
+    let cls='evo-node';
+    if(key===pet.stageKey)cls+=' current';
+    else if(stage>(e?.stage??0))cls+=' done';
+    else if(stage<(e?.stage??0))cls+=' locked';
+    node.className=cls; node.textContent=e?.emoji||'?'; chain.appendChild(node);
+    if(i<keys.length-1){ const a=document.createElement('span'); a.className='evo-arr'; a.textContent='→'; chain.appendChild(a); }
   });
-
-  if(!pet.branch && stage < 3){
-    $('evo-hint').textContent = 'Tu mascota evoluciona cada día. Cómo la cuides decide en qué se convierte.';
-  } else if(pet.branch === 'good'){
-    $('evo-hint').textContent = 'La estás cuidando de maravilla. Va por el mejor camino.';
-  } else if(pet.branch === 'bad'){
-    $('evo-hint').textContent = 'La has descuidado bastante. Su evolución lo refleja.';
-  } else {
-    $('evo-hint').textContent = 'La cuidas razonablemente. Sigue así.';
-  }
+  const hint=$('evo-hint');
+  if(!pet.branch&&stage<3) hint.textContent='Tu mascota evoluciona cada día. Cómo la cuides decide en qué se convierte.';
+  else if(pet.branch==='good') hint.textContent='La estás cuidando de maravilla. Va por el mejor camino.';
+  else if(pet.branch==='bad') hint.textContent='La has descuidado bastante. Su evolución lo refleja.';
+  else hint.textContent='La cuidas razonablemente. Sigue así.';
 }
 
 function playEvolution(){
-  const flash = $('evo-flash');
-  flash.classList.remove('go');
-  void flash.offsetWidth; // reflow
-  flash.classList.add('go');
+  const f=$('evo-flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
   showMsg('¡EVOLUCIONANDO!');
-  // vibration if supported
   if(navigator.vibrate) navigator.vibrate([100,50,100,50,200]);
 }
 
-// ─── CONTROLS ───────────────────────────────────────
+// ─── CONTROLS ───
 function selectAction(idx){
-  selectedAction = (idx + ACTIONS.length) % ACTIONS.length;
-  document.querySelectorAll('.action').forEach((el, i) => {
-    el.classList.toggle('sel', i === selectedAction);
-  });
+  selectedAction=(idx+ACTIONS.length)%ACTIONS.length;
+  document.querySelectorAll('.action').forEach((el,i)=>el.classList.toggle('sel',i===selectedAction));
 }
+function flashBtn(id){ const b=$(id); b.classList.add('pressed'); setTimeout(()=>b.classList.remove('pressed'),120); }
 
 function setupControls(){
-  $('btn-a').addEventListener('click', () => { selectAction(selectedAction - 1); flashBtn('btn-a'); });
-  $('btn-c').addEventListener('click', () => { selectAction(selectedAction + 1); flashBtn('btn-c'); });
-  $('btn-b').addEventListener('click', () => { doAction(ACTIONS[selectedAction]); flashBtn('btn-b'); });
+  $('btn-a').addEventListener('click',()=>{
+    flashBtn('btn-a');
+    if(game&&game.waiting){ guessDirection(-1); return; }
+    selectAction(selectedAction-1);
+  });
+  $('btn-c').addEventListener('click',()=>{
+    flashBtn('btn-c');
+    if(game&&game.waiting){ guessDirection(1); return; }
+    selectAction(selectedAction+1);
+  });
+  $('btn-b').addEventListener('click',()=>{ flashBtn('btn-b'); if(game) return; startAction(ACTIONS[selectedAction]); });
+  document.querySelectorAll('.action').forEach((el,i)=>{
+    el.addEventListener('click',()=>{ if(game) return; selectAction(i); startAction(ACTIONS[i]); });
+  });
+  $('menu-btn').addEventListener('click',()=>{
+    const p=$('info-panel'); p.classList.toggle('show');
+    $('menu-btn').textContent=p.classList.contains('show')?'CERRAR':'INFO';
+    if(p.classList.contains('show')) renderInfo();
+  });
+}
 
-  // tap directly on action
-  document.querySelectorAll('.action').forEach((el, i) => {
-    el.addEventListener('click', () => {
-      selectAction(i);
-      doAction(ACTIONS[i]);
+// ─── PHOTO / POSTCARD ───
+function buildPostcard(){
+  const c=$('photo-canvas'), x=c.getContext('2d'); const W=600,H=800;
+  // bg frame
+  x.fillStyle='#000'; x.fillRect(0,0,W,H);
+  x.fillStyle='#fff'; x.fillRect(20,20,W-40,H-40);
+  // header
+  x.fillStyle='#000'; x.font='700 18px "Space Mono",monospace'; x.textAlign='left'; x.fillText('P I X L',50,68);
+  x.font='700 11px "Space Mono",monospace'; x.textAlign='right'; x.fillStyle='#777';
+  const now=new Date();
+  x.fillText(now.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}).toUpperCase(),W-50,68);
+
+  // LCD-style screen with current bg
+  const sx=50, sy=100, sw=W-100, sh=380;
+  // background gradient by hour
+  const hr=now.getHours(); let g;
+  if(hr>=6&&hr<9){ g=x.createLinearGradient(0,sy,0,sy+sh); g.addColorStop(0,'#f5d8a8'); g.addColorStop(1,'#c5d2a0'); }
+  else if(hr>=9&&hr<19){ g=x.createLinearGradient(0,sy,0,sy+sh); g.addColorStop(0,'#add4e0'); g.addColorStop(1,'#b8cba0'); }
+  else if(hr>=19&&hr<21){ g=x.createLinearGradient(0,sy,0,sy+sh); g.addColorStop(0,'#e89b6c'); g.addColorStop(1,'#8a6a8c'); }
+  else { g=x.createLinearGradient(0,sy,0,sy+sh); g.addColorStop(0,'#2a3550'); g.addColorStop(1,'#4a5570'); }
+  x.fillStyle=g; x.fillRect(sx,sy,sw,sh);
+  x.strokeStyle='#1a1a1a'; x.lineWidth=6; x.strokeRect(sx,sy,sw,sh);
+
+  // draw pet sprite big
+  const stage=EVOLUTIONS[pet.stageKey]?.stage??0;
+  const sprite=SPRITES[pet.stageKey]||SPRITES.egg; const frame=sprite[0];
+  const cell=18; const spW=16*cell;
+  const ox=sx+sw/2-spW/2, oy=sy+sh/2-spW/2;
+  x.fillStyle='#2a352a';
+  for(let yy=0;yy<16;yy++) for(let xx=0;xx<16;xx++) if(frame[yy][xx]==='1') x.fillRect(ox+xx*cell,oy+yy*cell,cell,cell);
+
+  // night stars
+  if(hr>=21||hr<6){ x.fillStyle='rgba(255,255,255,0.6)';
+    [[90,150],[200,130],[420,160],[480,200],[140,220]].forEach(s=>x.fillRect(sx+s[0],sy+s[1],4,4)); }
+
+  // name + stage
+  x.fillStyle='#000'; x.textAlign='center';
+  x.font='700 42px "Bebas Neue",sans-serif';
+  x.fillText((pet.name||'PIXL').toUpperCase(),W/2,sy+sh+70);
+  x.font='700 12px "Space Mono",monospace'; x.fillStyle='#777';
+  const ageD=Math.floor((Date.now()-pet.born)/86400000);
+  x.fillText(`${STAGE_NAMES[stage].toUpperCase()} · ${ageD} DÍAS DE VIDA`,W/2,sy+sh+95);
+
+  // stats mini
+  x.fillStyle='#000'; x.font='700 11px "Space Mono",monospace';
+  const stats=[['HAMBRE',pet.hunger],['ENERGÍA',pet.energy],['FELIZ',pet.happy],['HIGIENE',pet.hygiene]];
+  const bw=100, gap=20, totalW=bw*4+gap*3, startX=W/2-totalW/2;
+  stats.forEach((s,i)=>{
+    const bx=startX+i*(bw+gap);
+    x.fillStyle='#777'; x.textAlign='center'; x.font='700 8px "Space Mono",monospace';
+    x.fillText(s[0],bx+bw/2,sy+sh+130);
+    x.fillStyle='#e8e8e8'; x.fillRect(bx,sy+sh+138,bw,8);
+    x.fillStyle='#000'; x.fillRect(bx,sy+sh+138,bw*(s[1]/100),8);
+  });
+
+  // footer
+  x.fillStyle='#000'; x.textAlign='center'; x.font='700 20px "Bebas Neue",sans-serif';
+  x.fillText('PIXL · DIGMARQUEZZ.ONLINE',W/2,H-70);
+  x.fillStyle='#777'; x.font='700 9px "Space Mono",monospace';
+  x.fillText('// MI MASCOTA VIRTUAL',W/2,H-50);
+
+  // corner brackets
+  x.strokeStyle='#bbb'; x.lineWidth=1.5;
+  [[40,40,12,12],[W-40,40,-12,12],[40,H-40,12,-12],[W-40,H-40,-12,-12]].forEach(([cx,cy,dx,dy])=>{
+    x.beginPath(); x.moveTo(cx,cy+dy); x.lineTo(cx,cy); x.lineTo(cx+dx,cy); x.stroke();
+  });
+  // yellow dot
+  x.fillStyle='#FFD700'; x.beginPath(); x.arc(W-60,60,5,0,Math.PI*2); x.fill();
+}
+
+function openPhoto(){ buildPostcard(); $('photo-modal').classList.add('open'); }
+function closePhoto(){ $('photo-modal').classList.remove('open'); }
+async function sharePhoto(){
+  buildPostcard();
+  const c=$('photo-canvas');
+  if(navigator.share && navigator.canShare){
+    c.toBlob(async blob=>{
+      const file=new File([blob],'pixl-'+(pet.name||'mascota')+'.png',{type:'image/png'});
+      try{ if(navigator.canShare({files:[file]})) await navigator.share({files:[file],title:'PIXL · '+pet.name,text:`¡Mira a ${pet.name}, mi mascota PIXL!`}); }catch(e){}
     });
-  });
-
-  // info toggle
-  $('menu-btn').addEventListener('click', () => {
-    const panel = $('info-panel');
-    panel.classList.toggle('show');
-    $('menu-btn').textContent = panel.classList.contains('show') ? 'CERRAR' : 'INFO';
-    if(panel.classList.contains('show')) renderInfo();
-  });
+  } else downloadPhoto();
+}
+function downloadPhoto(){
+  const c=$('photo-canvas');
+  c.toBlob(blob=>{ const u=URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=u; a.download='pixl-'+(pet.name||'mascota')+'.png'; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(u),100); });
 }
 
-function flashBtn(id){
-  const b = $(id);
-  b.classList.add('pressed');
-  setTimeout(() => b.classList.remove('pressed'), 120);
+// ─── ZOOM PREVENTION ───
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('gesturechange',e=>e.preventDefault());
+document.addEventListener('gestureend',e=>e.preventDefault());
+let lastTouch=0;
+document.addEventListener('touchend',e=>{ const n=Date.now(); if(n-lastTouch<=300)e.preventDefault(); lastTouch=n; },{passive:false});
+
+// ─── WELCOME FLOW ───
+function setupWelcome(){
+  const input=$('name-input'), btn=$('welcome-btn');
+  input.addEventListener('input',()=>{ btn.disabled = input.value.trim().length===0; });
+  input.addEventListener('keydown',e=>{ if(e.key==='Enter'&&input.value.trim()) bornPet(); });
+  btn.addEventListener('click',bornPet);
+}
+function bornPet(){
+  const name=$('name-input').value.trim().toUpperCase().slice(0,10)||'PIXL';
+  pet=defaultPet(name); save();
+  $('welcome').classList.add('hide');
+  startGame();
 }
 
-// ─── PREVENT ZOOM ───────────────────────────────────
-document.addEventListener('gesturestart', e => e.preventDefault());
-document.addEventListener('gesturechange', e => e.preventDefault());
-document.addEventListener('gestureend', e => e.preventDefault());
-let lastTouch = 0;
-document.addEventListener('touchend', e => {
-  const now = Date.now();
-  if(now - lastTouch <= 300) e.preventDefault();
-  lastTouch = now;
-}, {passive:false});
+// ─── INIT ───
+function startGame(){
+  simulate(); selectAction(0); updateBackground(); render();
+}
+function boot(){
+  $('yr').textContent=new Date().getFullYear();
+  setupControls(); setupWelcome();
+  $('photo-btn').addEventListener('click',openPhoto);
+  $('photo-close').addEventListener('click',closePhoto);
+  $('photo-modal').addEventListener('click',e=>{ if(e.target===$('photo-modal'))closePhoto(); });
+  $('photo-share').addEventListener('click',sharePhoto);
+  $('photo-download').addEventListener('click',downloadPhoto);
 
-// ─── INIT ───────────────────────────────────────────
-$('yr').textContent = new Date().getFullYear();
-load();
-simulate();
-selectAction(0);
-setupControls();
-render();
+  if(load()){ $('welcome').classList.add('hide'); startGame(); }
+  else { /* welcome shows */ }
 
-// tick every 30s while open
-let tickInterval = setInterval(() => { simulate(); render(); }, 30000);
+  setInterval(()=>{ if(pet){ simulate(); render(); } },30000);
+  // fast egg tick
+  setInterval(()=>{ if(pet&&!pet.dead){ const a=(Date.now()-pet.born)/3600000; if(a<STAGE_HOURS[1]+0.01){ simulate(); render(); } } },1000);
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&pet){ simulate(); render(); } });
 
-// fast tick during egg stage so the 30s hatch shows promptly
-let eggCheck = setInterval(() => {
-  if(pet && !pet.dead){
-    const ageH = (Date.now() - pet.born) / 3600000;
-    if(ageH < STAGE_HOURS[1] + 0.01){ simulate(); render(); }
-  }
-}, 1000);
-
-// re-simulate when app regains focus
-document.addEventListener('visibilitychange', () => {
-  if(!document.hidden){ simulate(); render(); }
-});
-
-if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+boot();
 </script>
 </body>
 </html>
