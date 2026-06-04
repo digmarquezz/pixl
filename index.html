@@ -131,11 +131,13 @@
     image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges;
   }
 
-  .lcd-stats{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:6px;z-index:3;}
+  .lcd-stats{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:5px;z-index:3;
+    background:rgba(245,247,242,0.82);padding:5px 6px;border-radius:6px;
+    backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
   .stat{flex:1;}
-  .stat-lbl{font-family:'Space Mono',monospace;font-size:6px;font-weight:700;letter-spacing:0.08em;
-    color:var(--lcd-dark);margin-bottom:2px;opacity:0.9;}
-  .stat-track{height:5px;background:rgba(42,53,42,0.18);border:1px solid var(--lcd-dark);
+  .stat-lbl{font-family:'Space Mono',monospace;font-size:6px;font-weight:700;letter-spacing:0.06em;
+    color:var(--lcd-dark);margin-bottom:2px;opacity:0.95;}
+  .stat-track{height:5px;background:rgba(42,53,42,0.15);border:1px solid var(--lcd-dark);
     border-radius:1px;overflow:hidden;}
   .stat-fill{height:100%;background:var(--lcd-dark);transition:width 0.4s ease;}
   .stat-fill.low{animation:blinkStat 0.8s steps(2) infinite;}
@@ -603,15 +605,15 @@ function drawPet(){
   const frame=sprite[animFrame%sprite.length];
 
   if(petState==='gaming'){
-    const cell=2.0; const spriteW=16*cell;
-    const drawX=GRID/2 - spriteW/2;
-    const drawY=GRID - spriteW - 6 + Math.sin(animFrame*0.4)*1.5;
+    const cell=2.5; const spriteW=16*cell;
+    const drawX=Math.round(GRID/2 - spriteW/2);
+    const drawY=Math.round(GRID - spriteW - 6 + Math.sin(animFrame*0.4)*1.5);
     ctx.save();
     ctx.fillStyle='#2a352a';
     const cx=drawX+spriteW/2;
     if(facing===-1){ ctx.translate(cx,0); ctx.scale(-1,1); ctx.translate(-cx,0); }
     for(let y=0;y<16;y++) for(let x=0;x<16;x++) if(frame[y][x]==='1')
-      ctx.fillRect(Math.floor(drawX+x*cell),Math.floor(drawY+y*cell),Math.ceil(cell),Math.ceil(cell));
+      ctx.fillRect(Math.floor(drawX+x*cell),Math.floor(drawY+y*cell),Math.ceil(cell)+1,Math.ceil(cell)+1);
     ctx.restore();
     return;
   }
@@ -620,9 +622,10 @@ function drawPet(){
   const spriteW=16*cell;
 
   // position: egg stays centered; others wander in idle
-  let drawX, drawY=posY - spriteW/2 + bobOffset;
-  if(stage===0){ drawX=GRID/2 - spriteW/2; drawY=GRID/2 - spriteW/2 + bobOffset; }
-  else { drawX=posX - spriteW/2; }
+  let drawX, drawY=Math.round(posY - spriteW/2 + bobOffset);
+  if(stage===0){ drawX=Math.round(GRID/2 - spriteW/2); drawY=Math.round(GRID/2 - spriteW/2 + bobOffset); }
+  else { drawX=Math.round(posX - spriteW/2); }
+  const cellR = Math.ceil(cell) + 1;
 
   // action-specific transforms
   let lean=0, squash=0, extraY=0;
@@ -647,7 +650,7 @@ function drawPet(){
       if(frame[y][x]==='1'){
         let dx=drawX + x*cell + lean;
         let dy=drawY + y*cell + extraY + (squash*(y/16));
-        ctx.fillRect(Math.floor(dx),Math.floor(dy),Math.ceil(cell),Math.ceil(cell));
+        ctx.fillRect(Math.floor(dx),Math.floor(dy),cellR,cellR);
       }
     }
   }
@@ -693,14 +696,17 @@ function tickAnim(){
   animFrame++;
   const stage=EVOLUTIONS[pet.stageKey]?.stage??0;
 
+  // minigame has its own update + draw
+  if(petState==='gaming'){
+    gameUpdate();
+    drawGame();
+    return;
+  }
+
   // state machine
   if(petState!=='idle' && petState!=='sleeping'){
     actionPhase++;
     stateTimer--;
-    if(petState==='playing'){
-      // hop
-      posY = 52 - Math.abs(Math.sin(actionPhase*0.4))*8;
-    }
     if(stateTimer<=0){ endAction(); }
   } else {
     // idle wander (only walking stages, not egg, not sleeping)
@@ -720,6 +726,8 @@ function tickAnim(){
   drawPet();
 }
 setInterval(tickAnim, 90);
+// faster loop just for the minigame (smooth fruit falling)
+setInterval(()=>{ if(petState==='gaming'){ animFrame++; gameUpdate(); drawGame(); } }, 33);
 
 // ─── ACTIONS with animations ───
 function startAction(action){
@@ -771,49 +779,105 @@ function endAction(){
   save(); render();
 }
 
-// ─── MINIGAME: guess direction ───
+// ─── MINIGAME: catch the fruit ───
 let game=null;
+const GAME_DURATION = 20000; // 20 seconds
 function startMinigame(){
-  game={ round:1, total:3, score:0, target:null, waiting:false };
+  game={
+    score:0,
+    fruits:[],          // {x, y, vy, type}
+    petX: GRID/2,
+    startTime: Date.now(),
+    lastSpawn: 0,
+    over:false,
+  };
   petState='gaming';
-  posX=GRID/2; posY=52; bobOffset=0;
-  $('game-ui').classList.add('show');
-  drawPet();
-  nextRound();
+  posX=GRID/2; posY=52; bobOffset=0; facing=1;
+  $('game-ui').classList.remove('show'); // we draw game on canvas instead
+  showMsg('¡ATRAPA LA FRUTA! A · C');
 }
-function nextRound(){
-  if(game.round>game.total){ endMinigame(); return; }
-  game.target = Math.random()<0.5 ? -1 : 1; // -1 left, 1 right
-  game.waiting=true;
-  $('game-score').textContent=`RONDA ${game.round}/${game.total} · ✓ ${game.score}`;
-  $('game-prompt').textContent='◀  ¿A o C?  ▶';
-  // pet looks anxious, faces center
-  facing=1;
-}
-function guessDirection(guess){
-  if(!game || !game.waiting) return;
-  game.waiting=false;
-  const correct = guess===game.target;
-  // pet runs in the target direction
-  facing=game.target; dirX=game.target;
-  if(correct){
-    game.score++;
-    $('game-prompt').textContent='¡BIEN! 🎉';
-  } else {
-    $('game-prompt').textContent='¡FALLO! 😣';
+
+const FRUIT_TYPES=['🍎','🍐','🍓','🍒','🍇'];
+function gameUpdate(){
+  if(!game || game.over) return;
+  const now=Date.now();
+  const elapsed=now-game.startTime;
+  if(elapsed>=GAME_DURATION){ endMinigame(); return; }
+
+  // spawn fruit every ~700ms
+  if(now-game.lastSpawn>700){
+    game.lastSpawn=now;
+    game.fruits.push({ x: 12+Math.random()*(GRID-24), y:-6, vy: 1.1+Math.random()*0.8, type:FRUIT_TYPES[Math.floor(Math.random()*FRUIT_TYPES.length)] });
   }
-  game.round++;
-  setTimeout(()=>{ if(game) nextRound(); }, 900);
+
+  // move fruits, check catch
+  const catchY = GRID-18;     // pet mouth level
+  const petHalf = 11;
+  for(let i=game.fruits.length-1;i>=0;i--){
+    const f=game.fruits[i];
+    f.y += f.vy;
+    if(f.y>=catchY && f.y<=catchY+12 && Math.abs(f.x-game.petX)<petHalf){
+      game.score++;
+      game.fruits.splice(i,1);
+      spawnParticle('💗');
+      continue;
+    }
+    if(f.y>GRID+6) game.fruits.splice(i,1);
+  }
 }
+
+function movePetGame(dir){
+  if(!game||game.over) return;
+  game.petX = Math.max(14, Math.min(GRID-14, game.petX + dir*9));
+  facing = dir;
+}
+
+function drawGame(){
+  if(!game) return;
+  // background already drawn by lcd-bg; draw fruits + pet on canvas
+  ctx.clearRect(0,0,GRID,GRID);
+  if(pet._isNight) drawStarsAndMoon();
+
+  // timer bar
+  const elapsed=Date.now()-game.startTime;
+  const tleft=Math.max(0,1-elapsed/GAME_DURATION);
+  ctx.fillStyle='rgba(42,53,42,0.25)'; ctx.fillRect(8,8,GRID-16,3);
+  ctx.fillStyle='#2a352a'; ctx.fillRect(8,8,(GRID-16)*tleft,3);
+
+  // score
+  ctx.fillStyle='#2a352a'; ctx.font='bold 9px monospace'; ctx.textAlign='left';
+  ctx.fillText('x'+game.score, 8, 24);
+  ctx.textAlign='left';
+
+  // fruits
+  ctx.font='12px monospace';
+  game.fruits.forEach(f=>{ ctx.fillText(f.type, f.x-6, f.y); });
+
+  // pet (small, at bottom, basket-like)
+  const sprite=SPRITES[pet.stageKey]||SPRITES.baby;
+  const frame=sprite[animFrame%sprite.length];
+  const cell=2.3; const spriteW=16*cell;
+  const dx=Math.round(game.petX-spriteW/2);
+  const dy=Math.round(GRID-spriteW-2);
+  ctx.save(); ctx.fillStyle='#2a352a';
+  const cx=dx+spriteW/2;
+  if(facing===-1){ ctx.translate(cx,0); ctx.scale(-1,1); ctx.translate(-cx,0); }
+  for(let y=0;y<16;y++) for(let x=0;x<16;x++) if(frame[y][x]==='1')
+    ctx.fillRect(Math.floor(dx+x*cell),Math.floor(dy+y*cell),Math.ceil(cell)+1,Math.ceil(cell)+1);
+  ctx.restore();
+}
+
 function endMinigame(){
-  const won=game.score>=2;
-  $('game-ui').classList.remove('show');
-  petState='idle';
-  const gain = game.score*12;          // up to 36
+  if(!game) return;
+  game.over=true;
+  const score=game.score;
+  petState='idle'; posX=GRID/2; posY=52;
+  const gain=Math.min(40, score*4);      // 10 fruits = +40
   pet.happy=clamp(pet.happy+gain);
-  pet.energy=clamp(pet.energy-12);
-  showMsg(won?`¡GANASTE! +${gain} FELIZ`:`+${gain} FELIZ`);
-  if(navigator.vibrate&&won) navigator.vibrate([60,40,60]);
+  pet.energy=clamp(pet.energy-10);
+  pet.hunger=clamp(pet.hunger+score*1.5); // eating fruit fills a bit
+  showMsg(`¡${score} FRUTAS! +${gain} FELIZ`);
+  if(navigator.vibrate&&score>=8) navigator.vibrate([60,40,60]);
   game=null; save(); render();
 }
 
@@ -898,16 +962,25 @@ function selectAction(idx){
 function flashBtn(id){ const b=$(id); b.classList.add('pressed'); setTimeout(()=>b.classList.remove('pressed'),120); }
 
 function setupControls(){
-  $('btn-a').addEventListener('click',()=>{
-    flashBtn('btn-a');
-    if(game&&game.waiting){ guessDirection(-1); return; }
-    selectAction(selectedAction-1);
+  // A and C: in game move pet; otherwise change action. Support hold-to-move.
+  let holdInterval=null;
+  function startHold(dir){
+    if(game){ movePetGame(dir); holdInterval=setInterval(()=>movePetGame(dir),60); }
+  }
+  function stopHold(){ if(holdInterval){ clearInterval(holdInterval); holdInterval=null; } }
+
+  const btnA=$('btn-a'), btnC=$('btn-c');
+  btnA.addEventListener('click',()=>{ flashBtn('btn-a'); if(!game) selectAction(selectedAction-1); });
+  btnC.addEventListener('click',()=>{ flashBtn('btn-c'); if(!game) selectAction(selectedAction+1); });
+  // hold to move during game
+  ['mousedown','touchstart'].forEach(ev=>{
+    btnA.addEventListener(ev,e=>{ if(game){ e.preventDefault(); startHold(-1); } },{passive:false});
+    btnC.addEventListener(ev,e=>{ if(game){ e.preventDefault(); startHold(1); } },{passive:false});
   });
-  $('btn-c').addEventListener('click',()=>{
-    flashBtn('btn-c');
-    if(game&&game.waiting){ guessDirection(1); return; }
-    selectAction(selectedAction+1);
+  ['mouseup','touchend','mouseleave','touchcancel'].forEach(ev=>{
+    btnA.addEventListener(ev,stopHold); btnC.addEventListener(ev,stopHold);
   });
+
   $('btn-b').addEventListener('click',()=>{ flashBtn('btn-b'); if(game) return; startAction(ACTIONS[selectedAction]); });
   document.querySelectorAll('.action').forEach((el,i)=>{
     el.addEventListener('click',()=>{ if(game) return; selectAction(i); startAction(ACTIONS[i]); });
